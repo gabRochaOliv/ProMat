@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ProMat — Plataforma educacional avançada para professores de matemática.">
+  <title>ProMat — Workspace Educacional</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+
+<div class="layout-wrapper">
+
+  <!-- ===================== SIDEBAR OVERLAY (mobile) ===================== -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo" onclick="navegarPara('home'); fecharSidebar()">
+        <i class="ph-fill ph-calculator"></i>
+        <span>ProMat</span>
+      </div>
+      <button class="btn-fechar-sidebar" onclick="fecharSidebar()" title="Fechar menu">
+        <i class="ph ph-x"></i>
+      </button>
+    </div>
+
+    <!-- Dois botões de ação distintos -->
+    <div class="sidebar-actions">
+      <button class="btn-sidebar-action primary" onclick="iniciarNovaConversa()">
+        <i class="ph ph-plus-circle"></i>
+        Nova conversa
+      </button>
+      <button class="btn-sidebar-action secondary" onclick="abrirModalNovaPasta()">
+        <i class="ph ph-folder-plus"></i>
+        Nova pasta / aula
+      </button>
+    </div>
+
+    <!-- Banner de contexto ativo -->
+    <div class="contexto-ativo-banner" id="sidebar-contexto-banner">
+      <div class="ctx-label"><i class="ph-fill ph-folder-open"></i> Pasta ativa</div>
+      <div class="ctx-nome" id="sidebar-contexto-nome">—</div>
+      <button class="btn-sair-contexto" onclick="sairDoPastaContexto()">
+        <i class="ph ph-arrow-left"></i> Sair da pasta
+      </button>
+    </div>
+
+    <!-- Navegação / Histórico -->
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- Preenchido via JS -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="api-status-mini">
+        <div class="api-dot" id="api-dot"></div>
+        <span id="api-status-texto">Verificando...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== AREA PRINCIPAL ===================== -->
+  <div class="main-content" id="main-content">
+
+    <!-- Mobile top bar -->
+    <div class="mobile-topbar">
+      <button class="btn-hamburger" onclick="abrirSidebar()" title="Menu">
+        <i class="ph ph-list"></i>
+      </button>
+      <span class="mobile-logo">ProMat</span>
+      <button class="btn-hamburger" onclick="iniciarNovaConversa()" title="Nova conversa">
+        <i class="ph ph-plus-circle"></i>
+      </button>
+    </div>
+
+    <!-- ==================== VIEW: HOME ==================== -->
+    <section id="view-home" class="view-section ativa">
+
+      <!-- Banner de contexto de pasta na Home -->
+      <div class="home-context-bar" id="home-context-bar">
+        <i class="ph-fill ph-folder-open home-ctx-icon"></i>
+        <div class="home-ctx-info">
+          <div class="home-ctx-label">Pasta ativa</div>
+          <div class="home-ctx-nome" id="home-ctx-nome">—</div>
+        </div>
+        <button class="btn-sair-ctx" onclick="sairDoPastaContexto()">
+          <i class="ph ph-x"></i> Sair da pasta
+        </button>
+      </div>
+
+      <div class="hero-header">
+        <h1 class="hero-title">O que vamos criar <span>hoje?</span></h1>
+        <p class="hero-subtitle" id="hero-subtitle">Escolha o tipo de material e gere em segundos com IA.</p>
+      </div>
+
+      <div class="cards-grid">
+
+        <div class="action-card" onclick="abrirFormulario('exercicios')">
+          <div class="card-icon" style="background:#ecfdf5;color:#059669;">
+            <i class="ph-fill ph-list-numbers"></i>
+          </div>
+          <div class="card-info">
+            <h3>Lista de Exercícios</h3>
+            <p>Listas diversificadas com gabarito para treino e fixação.</p>
+          </div>
+          <i class="ph ph-arrow-right card-arrow"></i>
+        </div>
+
+        <div class="action-card" onclick="abrirFormulario('prova')">
+          <div class="card-icon" style="background:#eff6ff;color:#2563eb;">
+            <i class="ph-fill ph-exam"></i>
+          </div>
+          <div class="card-info">
+            <h3>Prova / Avaliação</h3>
+            <p>Avaliação formal estruturada com espaço de resposta e pontuação.</p>
+          </div>
+          <i class="ph ph-arrow-right card-arrow"></i>
+        </div>
+
+        <div class="action-card" onclick="abrirFormulario('atividade-extra')">
+          <div class="card-icon" style="background:#fffbeb;color:#d97706;">
+            <i class="ph-fill ph-lightbulb"></i>
+          </div>
+          <div class="card-info">
+            <h3>Desafio / Extra</h3>
+            <p>Problemas criativos com contexto real para engajar os alunos.</p>
+          </div>
+          <i class="ph ph-arrow-right card-arrow"></i>
+        </div>
+
+        <div class="action-card" onclick="abrirFormulario('explicacao')">
+          <div class="card-icon" style="background:#fef2f2;color:#dc2626;">
+            <i class="ph-fill ph-chalkboard-teacher"></i>
+          </div>
+          <div class="card-info">
+            <h3>Explicação de Tema</h3>
+            <p>Material de apoio com exemplos práticos e dicas de didática.</p>
+          </div>
+          <i class="ph ph-arrow-right card-arrow"></i>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW: FORMULÁRIO ==================== -->
+    <section id="view-form" class="view-section">
+      <div class="top-nav">
+        <button class="btn-voltar" onclick="navegarPara('home')">
+          <i class="ph ph-caret-left"></i> Voltar
+        </button>
+      </div>
+
+      <div class="form-wrapper">
+        <div class="form-header">
+          <div class="form-icon" id="form-header-icon"><i class="ph-fill ph-file-text"></i></div>
+          <div>
+            <h2 class="form-title" id="form-header-title">Configurar Material</h2>
+            <p class="form-subtitle">Preencha os detalhes para a IA gerar o conteúdo.</p>
+          </div>
+        </div>
+
+        <form id="form-principal" class="premium-form" novalidate>
+          <input type="hidden" id="form-tipo-acao" value="">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="serie">Série <span class="req">*</span></label>
+              <div class="select-wrapper">
+                <select id="serie" name="serie">
+                  <option value="6ano">6º Ano</option>
+                  <option value="7ano">7º Ano</option>
+                  <option value="8ano" selected>8º Ano</option>
+                  <option value="9ano">9º Ano</option>
+                </select>
+                <i class="ph ph-caret-down"></i>
+              </div>
+            </div>
+
+            <div class="form-group" id="grupo-quantidade">
+              <label for="quantidade" id="label-quantidade">Quantidade <span class="req">*</span></label>
+              <input type="number" id="quantidade" value="10" min="1" max="20">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="tema">Tema / Assunto <span class="req">*</span></label>
+            <input type="text" id="tema" placeholder="Ex: Sistemas de equações, método da substituição" maxlength="200" autocomplete="off">
+            <div class="sugestoes-temas" id="sugestoes-temas"></div>
+          </div>
+
+          <div class="form-group" id="grupo-nivel">
+            <label>Nível de Dificuldade <span class="req">*</span></label>
+            <div class="nivel-selector">
+              <button type="button" class="nivel-btn ativo" data-nivel="facil">Fácil</button>
+              <button type="button" class="nivel-btn" data-nivel="medio">Médio</button>
+              <button type="button" class="nivel-btn" data-nivel="dificil">Avançado</button>
+            </div>
+            <input type="hidden" id="nivel-valor" value="facil">
+          </div>
+
+          <!-- Destino: pasta ou conversa solta -->
+          <div id="form-destino-container">
+            <!-- Preenchido via JS — mostra pasta atual ou opção de salvar avulso -->
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary btn-block btn-gerar" id="btn-gerar">
+              <i class="ph ph-magic-wand"></i>
+              <span id="btn-gerar-texto">Gerar com IA</span>
+              <div class="spinner-mini" id="btn-gerar-spinner" style="display:none;"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW: RESULTADO ==================== -->
+    <section id="view-result" class="view-section">
+
+      <div class="result-toolbar">
+        <div class="toolbar-left">
+          <button class="btn-voltar" onclick="navegarPara('home')">
+            <i class="ph ph-caret-left"></i> <span>Início</span>
+          </button>
+          <div class="resultado-pasta-badge" id="resultado-pasta-badge">
+            <i class="ph-fill ph-folder"></i>
+            <span id="resultado-pasta-nome">—</span>
+          </div>
+        </div>
+
+        <div class="toolbar-actions">
+          <button class="btn btn-outline-soft" onclick="clonnerGeracao()" title="Gerar novamente">
+            <i class="ph ph-arrows-clockwise"></i> <span>Refazer</span>
+          </button>
+          <button class="btn btn-outline-soft" id="toolbar-btn-gabarito" onclick="toggleGabarito()">
+            <i class="ph ph-check-circle"></i> <span>Gabarito</span>
+          </button>
+          <button class="btn btn-primary-dark" onclick="abrirImpressaoAction()">
+            <i class="ph ph-printer"></i> <span>Imprimir</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="result-document-wrapper">
+        <div class="result-document">
+          <div class="document-header">
+            <p class="document-subject">M A T E M Á T I C A</p>
+            <h1 class="document-title" id="resultado-titulo">—</h1>
+            <div class="document-meta" id="resultado-info"></div>
+          </div>
+          <div class="document-body">
+            <div id="lista-exercicios"></div>
+          </div>
+        </div>
+
+        <div class="result-gabarito-panel" id="gabarito-panel">
+          <div class="gabarito-header">
+            <h3><i class="ph-fill ph-key"></i> Gabarito</h3>
+            <button class="btn-fechar-gabarito" onclick="toggleGabarito()"><i class="ph ph-x"></i></button>
+          </div>
+          <div class="gabarito-body" id="lista-gabarito"></div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+</div><!-- /layout-wrapper -->
+
+<!-- ===================== MODAL: NOVA PASTA ===================== -->
+<div class="overlay" id="modal-nova-pasta-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="ph-fill ph-folder-plus"></i> Nova Pasta / Aula</h3>
+      <button class="btn-icon" onclick="fecharModalNovaPasta()"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="nova-pasta-form">
+        <div>
+          <label for="input-nome-pasta">Nome da pasta</label>
+          <input type="text" id="input-nome-pasta" placeholder="Ex: Aula — Equação do 2º Grau" maxlength="80" autocomplete="off">
+        </div>
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Sugestões rápidas:</p>
+          <div class="nova-pasta-sugestoes" id="sugestoes-nome-pasta">
+            <!-- Inserido via JS com a data atual -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalNovaPasta()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarCriacaoPasta()">
+        <i class="ph ph-folder-plus"></i> Criar pasta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: IMPRESSÃO ===================== -->
+<div class="overlay" id="impressao-overlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="ph ph-printer"></i> Imprimir / Exportar PDF</h3>
+      <button class="btn-icon" id="btn-fechar-modal" onclick="fecharModalImpressao()"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="print-settings">
+        <label class="custom-checkbox">
+          <input type="checkbox" id="incluir-gabarito-check">
+          Incluir página de gabarito ao final
+        </label>
+      </div>
+      <div class="preview-area" id="impressao-preview-content">
+        <!-- preview inserido via JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalImpressao()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-imprimir-agora">
+        <i class="ph ph-printer"></i> Imprimir
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TOASTS ===================== -->
+<div class="toast-system" id="toast-container"></div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script src="js/api.js"></script>
+<script src="js/geometry.js"></script>
+<script src="js/printer.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
