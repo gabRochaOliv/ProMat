@@ -1,95 +1,120 @@
 /**
  * Serviço de IA - Camada de abstração para provedores de LLM
- * 
- * Arquitetura desacoplada: trocar de provedor requer apenas
- * adicionar um novo adaptador neste arquivo e configurar AI_PROVIDER no .env
- * 
- * Provedores suportados: openai, gemini (em breve)
+ *
+ * Provedores suportados: openai
  */
 
 require('dotenv').config();
 
-const MAX_TOKENS = parseInt(process.env.MAX_TOKENS) || 2000;
-const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
+const MAX_TOKENS = parseInt(process.env.MAX_TOKENS) || 16000;
+const AI_MODEL   = process.env.AI_MODEL    || 'gpt-4o-mini';
 const AI_PROVIDER = process.env.AI_PROVIDER || 'openai';
+
+// ===========================
+// REPARO DE JSON TRUNCADO
+// ===========================
+/**
+ * Tenta reparar um JSON cortado no meio, fechando estruturas abertas.
+ * Cobre os casos mais comuns: string aberta, arrays e objetos não fechados.
+ */
+function tentarRepararJSON(raw) {
+  let s = raw.trim();
+
+  // 1. Remove tudo após a última vírgula de nível raiz (linha incompleta)
+  //    Ex: "..."resolucao":"Passo 1: ..." → corta antes da linha ruim
+  const ultimoFechamento = Math.max(s.lastIndexOf('}'), s.lastIndexOf(']'));
+  if (ultimoFechamento > 0) {
+    s = s.slice(0, ultimoFechamento + 1);
+  }
+
+  // 2. Fecha estruturas abertas contando chaves e colchetes
+  let opens = [];
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escape) { escape = false; continue; }
+    if (c === '\\' && inString) { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === '{' || c === '[') opens.push(c === '{' ? '}' : ']');
+    if (c === '}' || c === ']') opens.pop();
+  }
+
+  // 3. Se ficou dentro de uma string, fecha ela
+  if (inString) s += '"';
+
+  // 4. Fecha os colchetes/chaves pendentes em ordem inversa
+  while (opens.length > 0) {
+    s += opens.pop();
+  }
+
+  return s;
+}
 
 // ===========================
 // ADAPTADOR: OpenAI
 // ===========================
-async function callOpenAI(prompt, systemPrompt) {
+async function callOpenAI(prompt, systemPrompt, jsonMode = true) {
   const { OpenAI } = require('openai');
 
-  const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+  let finalSystemPrompt = systemPrompt || 'Você é um assistente de educação matemática especializado.';
+  if (jsonMode && !finalSystemPrompt.toLowerCase().includes('json')) {
+    finalSystemPrompt += ' Responda obrigatoriamente no formato JSON.';
+  }
+
+  const params = {
+    model: AI_MODEL,
+    messages: [
+      { role: 'system', content: finalSystemPrompt },
+      { role: 'user',   content: prompt },
+    ],
+    max_tokens: MAX_TOKENS,
+    temperature: 0.7,
+  };
+
+  if (jsonMode) {
+    params.response_format = { type: 'json_object' };
+  }
+
+  console.log(`[OpenAI] Enviando requisição para modelo ${AI_MODEL}...`);
+  const response = await client.chat.completions.create(params);
+
+  const finishReason = response.choices[0].finish_reason;
+  console.log(`[OpenAI] Resposta recebida. Tokens: ${response.usage?.total_tokens || 'N/A'} | Motivo: ${finishReason}`);
+
+  const content = response.choices[0].message.content;
+
+  if (!jsonMode) return content;
+
+  // Tenta parse normal primeiro
   try {
-    console.log(`[OpenAI] Enviando requisição para modelo ${AI_MODEL}...`);
-    const response = await client.chat.completions.create({
-      model: AI_MODEL,
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt || 'Você é um assistente especializado em educação matemática do Ensino Fundamental brasileiro. Sempre responda em formato JSON válido.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      max_tokens: MAX_TOKENS,
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    });
-
-    console.log(`[OpenAI] Resposta recebida com sucesso. Tokens usados: ${response.usage?.total_tokens || 'N/A'}`);
-    const content = response.choices[0].message.content;
     return JSON.parse(content);
-  } catch (error) {
-    console.error('[OpenAI ERRO]', error.message);
-    if (error.response) {
-      console.error('[OpenAI DETALHES]', error.response.data);
+  } catch (parseErr) {
+    console.warn('[OpenAI] JSON truncado detectado. Tentando reparo automático...');
+    try {
+      const reparado = tentarRepararJSON(content);
+      const resultado = JSON.parse(reparado);
+      console.log('[OpenAI] Reparo de JSON bem-sucedido!');
+      return resultado;
+    } catch (repairErr) {
+      console.error('[OpenAI] Falha no reparo do JSON:', repairErr.message);
+      console.error('[OpenAI] Primeiros 500 chars do conteúdo bruto:', content?.slice(0, 500));
+      throw new Error('A resposta da IA foi corrompida. Tente com menos questões ou um tema mais simples.');
     }
-    throw new Error('Falha ao comunicar com a inteligência artificial. Tente novamente em instantes.');
   }
 }
 
 // ===========================
-// ADAPTADOR: Google Gemini
-// (Ativar quando necessário)
+// FUNÇÃO PRINCIPAL EXPORTADA
 // ===========================
-async function callGemini(prompt) {
-  // TODO: implementar integração com Gemini
-  // const { GoogleGenerativeAI } = require('@google/generative-ai');
-  // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  // ...
-  throw new Error('Provedor Gemini ainda não implementado. Configure AI_PROVIDER=openai no .env');
-}
-
-// ===========================
-// ROTEADOR DE PROVEDORES
-// ===========================
-async function callAI(prompt, systemPrompt) {
-  if (!AI_PROVIDER) {
-    throw new Error('AI_PROVIDER não configurado no .env');
+async function callAI(prompt, systemPrompt, jsonMode = true) {
+  if (AI_PROVIDER === 'openai') {
+    return await callOpenAI(prompt, systemPrompt, jsonMode);
   }
-
-  switch (AI_PROVIDER.toLowerCase()) {
-    case 'openai':
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY não configurada no .env');
-      }
-      return await callOpenAI(prompt, systemPrompt);
-
-    case 'gemini':
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY não configurada no .env');
-      }
-      return await callGemini(prompt);
-
-    default:
-      throw new Error(`Provedor de IA desconhecido: ${AI_PROVIDER}. Use: openai | gemini`);
-  }
+  throw new Error(`Provedor de IA "${AI_PROVIDER}" não suportado. Use: openai`);
 }
 
 module.exports = { callAI };

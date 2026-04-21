@@ -24,10 +24,13 @@ const NIVEL_INSTRUCOES = {
 
 const REGRAS_MATEMATICAS = `
 REGRAS DE FORMATAÇÃO MATEMÁTICA (MUITO IMPORTANTE):
-- Todo e qualquer número, operação, fração, potência, variável algébrica ou expressão matemática deve OBRIGATORIAMENTE ser formatada em LaTeX.
-- Para expressões no meio do texto (inline), use a notação: \\( expressao \\). Exemplo: A variável \\( x \\) equivale a \\( 2x^2 + 5 \\).
+- Use LaTeX para frações, potências, raízes, equações, variáveis algébricas e expressões complexas.
+- Para expressões no meio do texto (inline), use a notação: \\( expressao \\). Exemplo: "A variável \\( x \\) vale \\( 10 \\)".
 - Para cálculos destacados ou equações completas (blocos isolados), use a notação dupla: $$ expressao $$
-- Escreva a matemática com clareza, usando \\frac{}{}, \\sqrt{}, \\cdot, etc., sempre que aplicável.
+- SÍMBOLO DE MOEDA: Nunca coloque o "R$" dentro do bloco LaTeX. Escreva sempre fora: R$ \\( 25,50 \\) ou simplesmente R$ 25,50.
+- SEPARADOR DECIMAL: No Brasil usamos vírgula. No LaTeX, use chaves para a vírgula não criar espaço extra: \\( 3{,}5 \\) em vez de \\( 3,5 \\).
+- Se for OBRIGATÓRIO usar "$" dentro de um bloco LaTeX, você deve escapá-lo: \\$
+- Escreva a matemática com clareza, fechando sempre todas as chaves { } e parênteses.
 `;
 
 const REGRAS_VISUAIS = `
@@ -63,6 +66,11 @@ O campo "figura" deve seguir EXATAMENTE este esquema:
   "figura": { "tipo": "plano_cartesiano", "dados": { "pontos": [{"x": 0, "y": 0, "label": "A"}, {"x": 3, "y": 6, "label": "B"}], "range_x": [-1, 5], "range_y": [-1, 8] } }
 
 IMPORTANTE: o campo "figura" é OPCIONAL. Só inclua quando realmente necessário (exercício de geometria/gráfico). Nunca force figuras em exercícios de álgebra, frações ou porcentagem.
+
+ESTRUTURA DO TEXTO:
+- Seja direto e claro.
+- Para problemas com muitos dados, use tópicos ou quebras de linha (\n) para organizar a informação.
+- Se houver alternativas, use OBRIGATORIAMENTE o campo "opcoes" do JSON em vez de escrevê-las no enunciado.
 `;
 
 /**
@@ -82,10 +90,12 @@ ${nivelInstrucao}
 
 REGRAS OBRIGATÓRIAS:
 - Use linguagem clara e adequada para crianças/adolescentes da faixa etária
-- Varie os formatos (cálculo direto, problema contextualizado, complete, verdadeiro/falso quando adequado)
+- Varie os formatos (cálculo direto, problema contextualizado, múltipla escolha, verdadeiro/falso)
+- IMPORTANTE: Para questões de múltipla escolha, forneça as alternativas OBRIGATORIAMENTE no campo "opcoes" do JSON.
+- Mantenha o enunciado organizado, usando quebras de linha (\n) se necessário para separar instruções de dados.
 - Todos os exercícios devem ter resposta correta e verificável
-- Não inclua o gabarito na lista (apenas os enunciados)
-- Numere cada exercício
+- Não inclua as respostas no enunciado dos exercícios; todas as respostas devem ser fornecidas OBRIGATORIAMENTE no campo "gabarito" do JSON de saída.
+- Numere cada exercício sequencialmente
 - Mantenha coerência matemática rigorosa — não pode haver erro nos cálculos
 ${REGRAS_MATEMATICAS}
 ${REGRAS_VISUAIS}
@@ -100,7 +110,8 @@ FORMATO DE SAÍDA (JSON - siga EXATAMENTE este formato):
     {
       "numero": 1,
       "enunciado": "Texto completo do exercício",
-      "tipo": "calculo|problema|completar|vf",
+      "tipo": "calculo|problema|multipla_escolha|vf",
+      "opcoes": ["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"],
       "figura": { "tipo": "retangulo", "dados": { "base": 8, "altura": 5 } }
     }
   ],
@@ -120,91 +131,106 @@ Gere apenas o JSON, sem texto antes ou depois.`;
 /**
  * Cria o prompt para geração de prova
  */
-function buildProvaPrompt({ serie, tema, totalQuestoes }) {
+function buildProvaPrompt({ serie, tema, totalQuestoes, tipoQuestoes = 'misto', nivel = 'medio' }) {
   const serieLabel = SERIES_LABELS[serie] || serie;
+  const nivelLabel = { facil: 'Fácil (básico)', medio: 'Médio', dificil: 'Avançado/Desafiador' }[nivel];
 
-  return `Você é um professor experiente de Matemática do Ensino Fundamental.
+  const descritoresTipo = {
+    misto: "um mix variado de múltipla escolha, sequência V/F, cálculos e questões dissertativas.",
+    multipla_escolha: "exclusivamente questões de múltipla escolha (Marque X) com exatamente 5 alternativas (a, b, c, d, e) cada.",
+    dissertativa: "questões abertas e dissertativas onde o aluno deve resolver e explicar por extenso.",
+    calculo: "questões focadas puramente em cálculos e operações matemáticas.",
+    vf: "questões de sequência V ou F. O enunciado deve listar 4 ou 5 afirmações (I, II, III...) e as alternativas (a, b, c, d, e) devem ser combinações como 'V-F-V-F', 'F-V-F-V', etc.",
+  };
 
-Gere uma prova completa de Matemática sobre "${tema}" para alunos do ${serieLabel}.
+  const estiloInstrucao = descritoresTipo[tipoQuestoes] || descritoresTipo.misto;
 
-Total de questões: ${totalQuestoes}
-Distribuição sugerida: ${Math.ceil(totalQuestoes * 0.4)} fáceis, ${Math.ceil(totalQuestoes * 0.4)} médias, ${Math.floor(totalQuestoes * 0.2)} difíceis.
+  return `Professor de Matemática. Gere uma prova JSON sobre "${tema}" para ${serieLabel}.
+Nível: ${nivelLabel} | Questões: ${totalQuestoes} | Estilo: ${estiloInstrucao}
 
 REGRAS:
-- Questões variadas (cálculo, problema contextualizado, interpretação)
-- Linguagem adequada para a série
-- Sem erros matemáticos
-- Estrutura formal de avaliação
-${REGRAS_MATEMATICAS}
-${REGRAS_VISUAIS}
+- Enunciado: apenas pergunta/afirmações. Use OBRIGATORIAMENTE \\n antes de CADA item romano (I., II., III...) para que fiquem em linhas separadas.
+- Múltipla escolha: "opcoes" com 5 strings. Outros tipos: "opcoes": [].
+- V/F: enunciado lista afirmações (I, II, III...), opcoes traz sequências ("V-V-F", "F-V-V"...).
+- LaTeX: use \\( expr \\). NUNCA use $.
+- "resolucao" no gabarito: passo a passo conciso separado por \\n.
 
-FORMATO DE SAÍDA (JSON):
-{
-  "titulo": "Avaliação de Matemática — ${tema}",
-  "subtitulo": "Nome: _________________________ Data: ___/___/____ Nota: ____",
-  "serie": "${serieLabel}",
-  "tema": "${tema}",
-  "instrucoes": "Instrução geral para a prova",
-  "questoes": [
-    {
-      "numero": 1,
-      "enunciado": "Texto completo",
-      "tipo": "calculo|problema|completar|vf",
-      "valor": 1,
-      "figura": null
-    }
-  ],
-  "gabarito": [
-    {
-      "numero": 1,
-      "resposta": "Resposta com resolução"
-    }
-  ]
-}
+JSON de saída (estrutura obrigatória):
+{"titulo":"Avaliação — ${tema}","subtitulo":"Nome: ___________ Data: ___/___/____ Nota: ____","serie":"${serieLabel}","nivel":"${nivelLabel}","tema":"${tema}","instrucoes":"Leia com atenção.","questoes":[{"numero":1,"enunciado":"...","tipo":"multipla_escolha","opcoes":["A","B","C","D","E"],"valor":2,"figura":null}],"gabarito":[{"numero":1,"alternativa_correta":"B","resposta":"Resposta direta","resolucao":"Passo 1: ...\\nPasso 2: ..."}]}
 
-NOTA: o campo "figura" é OPCIONAL. Use null quando não houver figura.
-
-Gere apenas o JSON, sem texto antes ou depois.`;
+Responda SOMENTE com o JSON completo.`;
 }
 
 /**
  * Cria o prompt para atividade extra / desafio
  */
-function buildAtividadeExtraPrompt({ serie, tema, tipo }) {
+function buildAtividadeExtraPrompt({ serie, tema, tipo, nivel = 'medio' }) {
   const serieLabel = SERIES_LABELS[serie] || serie;
-  const tipoLabel = tipo === 'desafio' ? 'desafio matemático criativo' : 'atividade prática e aplicada';
+  const nivelLabel = { facil: 'Fácil', medio: 'Médio', dificil: 'Avançado/Desafiador' }[nivel] || 'Médio';
 
-  return `Você é um professor criativo de Matemática do Ensino Fundamental.
+  return `Você é um professor criativo e apaixonado por Matemática. Crie UM ÚNICO desafio matemático criativo e envolvente sobre "${tema}" para alunos do ${serieLabel}.
 
-Crie um ${tipoLabel} sobre "${tema}" para alunos do ${serieLabel}.
+Nível de dificuldade: ${nivelLabel}
 
-REGRAS:
-- Deve ser diferente de uma lista comum de exercícios
-- Pode usar situações do cotidiano, jogos ou problemas contextualizados
-- Linguagem motivadora e acessível
-- Entre 3 e 5 itens ou etapas
-${REGRAS_MATEMATICAS}
+DIRETRIZES CRIATIVAS:
+- O desafio deve ter um CONTEXTO REAL e MOTIVADOR (viagem, esporte, construção, culinária, tecnologia, etc.)
+- Deve ser diferente de um exercício comum. Pode ser um problema investigativo, um enigma, uma missão, uma situação-problema complexa.
+- Apresente como uma "missão" ou "aventura matemática" com título chamativo.
+- Divida em etapas progressivas (3 etapas): warmup → núcleo → desafio bônus.
+- Se o tema envolver geometria, inclua a figura SVG. Caso contrário, deixe figura como null.
+- LaTeX: use \\( expr \\) para inline. NUNCA use $.
 
-FORMATO DE SAÍDA (JSON):
+GABARITO:
+- Resolução COMPLETA e DETALHADA de cada etapa.
+- Linguagem de professor explicando para o aluno, com entusiasmo.
+- Explique o PORQUÊ de cada passo.
+
+FORMATO JSON (responda SOMENTE com o JSON):
 {
-  "titulo": "Título criativo da atividade",
-  "tipo": "${tipo}",
-  "descricao": "Breve descrição da atividade para o aluno",
-  "itens": [
+  "titulo": "🔥 Título criativo e chamativo do desafio",
+  "contexto": "Descrição imersiva da história/missão que contextualiza o desafio (2-3 frases motivadoras)",
+  "nivel": "${nivelLabel}",
+  "serie": "${serieLabel}",
+  "tema": "${tema}",
+  "figura": null,
+  "etapas": [
     {
       "numero": 1,
-      "enunciado": "Texto do item"
+      "titulo": "Etapa 1 — Aquecimento",
+      "enunciado": "Enunciado da primeira etapa, mais simples"
+    },
+    {
+      "numero": 2,
+      "titulo": "Etapa 2 — O Desafio Principal",
+      "enunciado": "Enunciado do desafio central, mais complexo"
+    },
+    {
+      "numero": 3,
+      "titulo": "Etapa 3 — Bônus: Vai Além!",
+      "enunciado": "Uma extensão criativa para quem terminar antes"
     }
   ],
   "gabarito": [
     {
       "numero": 1,
-      "resposta": "Resposta"
+      "titulo": "Etapa 1",
+      "resposta": "Resposta direta e concisa",
+      "resolucao": "Explicação detalhada passo a passo da etapa 1"
+    },
+    {
+      "numero": 2,
+      "titulo": "Etapa 2",
+      "resposta": "Resposta direta e concisa",
+      "resolucao": "Explicação detalhada passo a passo da etapa 2"
+    },
+    {
+      "numero": 3,
+      "titulo": "Etapa 3 — Bônus",
+      "resposta": "Resposta da extensão",
+      "resolucao": "Explicação da etapa bônus"
     }
   ]
-}
-
-Gere apenas o JSON, sem texto antes ou depois.`;
+}`;
 }
 
 /**
@@ -213,30 +239,43 @@ Gere apenas o JSON, sem texto antes ou depois.`;
 function buildExplicacaoPrompt({ serie, tema }) {
   const serieLabel = SERIES_LABELS[serie] || serie;
 
-  return `Você é um professor didático de Matemática do Ensino Fundamental.
+  return `Você é um professor didático e profundo de Matemática do Ensino Fundamental.
 
-Explique o tema "${tema}" de forma simples para alunos do ${serieLabel}.
+Explique o tema "${tema}" de forma clara, didática e completa para alunos do ${serieLabel}.
 
 REGRAS:
-- Linguagem simples e acessível à faixa etária
-- Use 2 exemplos práticos do cotidiano
-- Explique o conceito central de forma clara
-- Máximo de 3 parágrafos
+- Linguagem adequada à faixa etária, mas sem perder o rigor matemático.
+- Divida a explicação em: Introdução, Conceito Principal e Aplicação.
+- Use pelo menos 2 exemplos práticos e detalhados.
+- Se o tema envolver geometria ou gráficos, utilize a regra de figuras abaixo.
+- IMPORTANTE: No final, forneça um link real e confiável (como Khan Academy, Brasil Escola ou similares) que contenha mais conteúdo sobre este tema específico.
 ${REGRAS_MATEMATICAS}
+${REGRAS_VISUAIS}
 
 FORMATO DE SAÍDA (JSON):
 {
   "tema": "${tema}",
   "serie": "${serieLabel}",
-  "explicacao": "Texto explicativo completo",
+  "explicacao": "Texto explicativo completo e estruturado",
+  "figura": { "tipo": "...", "dados": { ... } },
   "exemplos": [
     {
       "titulo": "Título do exemplo",
-      "descricao": "Exemplo prático"
+      "descricao": "Exemplo prático e detalhado"
     }
   ],
-  "dicasDoProfessor": "Dica rápida para o professor ao ensinar este tema"
+  "dicasDoProfessor": "Dicas de como abordar este conteúdo em sala de aula",
+  "referencias": [
+    {
+      "nome": "Nome do Site (ex: Brasil Escola)",
+      "url": "https://url-especifica-do-tema",
+      "descricao": "Breve descrição do que o professor encontrará neste link"
+    }
+  ]
 }
+
+NOTA: o campo "figura" é OPCIONAL. Só use se for realmente útil para a explicação.
+IMPORTANTE: As referências devem ser de sites brasileiros confiáveis (Brasil Escola, Toda Matéria, Mundo Educação, etc.).
 
 Gere apenas o JSON, sem texto antes ou depois.`;
 }

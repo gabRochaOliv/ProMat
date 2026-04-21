@@ -11,8 +11,10 @@ const estado = {
   dadosAtuais: null,
   tipoAtual: null,
   backendOnline: false,
-  pastaAtivaId: null,        // null = sem contexto de pasta
-  itemAtualDaPastaId: null,  // para saber em qual pasta está o item visualizado
+  pastaAtivaId: null,
+  itemAtualDaPastaId: null,
+  gabaritoAtual: [],     // gabarito da geração atual para o modal
+  temaAtual: '',         // tema para contexto do chat de IA
 };
 
 // Atalho de temas por série
@@ -31,6 +33,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   HistoryManager.renderizarSidebar();
   navegarPara('home');
   await verificarStatusBackend();
+
+  // Inicializa Infra (Supabase + Auth)
+  if (window.SupabaseClient) {
+    await window.SupabaseClient.init();
+    if (window.Auth) await window.Auth.init();
+  }
 });
 
 // ============================================================
@@ -212,8 +220,8 @@ function abrirFormulario(tipo) {
 
   const confs = {
     'exercicios':      { icone: 'ph-list-numbers',        titulo: 'Lista de Exercícios',       qtd: true,  nivel: true },
-    'prova':           { icone: 'ph-exam',                 titulo: 'Prova / Avaliação',          qtd: true,  nivel: false },
-    'atividade-extra': { icone: 'ph-lightbulb',            titulo: 'Desafio / Atividade Extra',  qtd: false, nivel: false },
+    'prova':           { icone: 'ph-exam',                 titulo: 'Prova / Avaliação',          qtd: true,  nivel: true },
+    'atividade-extra': { icone: 'ph-lightbulb',            titulo: 'Desafio / Atividade Extra',  qtd: false, nivel: true },
     'explicacao':      { icone: 'ph-chalkboard-teacher',   titulo: 'Explicação de Tema',         qtd: false, nivel: false },
   };
 
@@ -228,6 +236,11 @@ function abrirFormulario(tipo) {
     document.getElementById('label-quantidade').innerHTML = 'Quantidade <span class="req">*</span>';
   }
   nivelGroup.style.display = c.nivel ? '' : 'none';
+
+  const tipoQuestoesGroup = document.getElementById('grupo-tipo-questoes');
+  if (tipoQuestoesGroup) {
+    tipoQuestoesGroup.style.display = tipo === 'prova' ? '' : 'none';
+  }
 
   renderizarDestinoForm();
   atualizarSugestoesTemas(document.getElementById('serie').value);
@@ -301,6 +314,9 @@ function configurarEventosUI() {
   document.getElementById('modal-nova-pasta-overlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('modal-nova-pasta-overlay')) fecharModalNovaPasta();
   });
+  document.getElementById('gabarito-modal-overlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('gabarito-modal-overlay')) fecharModalGabarito();
+  });
 }
 
 function atualizarSugestoesTemas(serie) {
@@ -325,7 +341,10 @@ async function submeterFormulario() {
   if (!tema) { mostrarToast('Informe o tema ou assunto.', 'aviso'); return; }
 
   const params = { serie, tema, nivel, quantidade };
-  if (tipo === 'prova') params.totalQuestoes = quantidade;
+  if (tipo === 'prova') {
+    params.totalQuestoes = quantidade;
+    params.tipoQuestoes = document.getElementById('tipo-questoes').value;
+  }
   if (tipo === 'atividade-extra') params.tipo = 'desafio';
 
   const btnGerar = document.getElementById('btn-gerar');
@@ -412,7 +431,10 @@ function renderizarResultado(dados, tipo, pastaId) {
   if (tipo === 'explicacao') {
     renderizarExplicacaoDOM(dados, listaEl);
     document.getElementById('toolbar-btn-gabarito').style.display = 'none';
-    // Renderiza LaTeX na explicação também
+    if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => {});
+  } else if (tipo === 'atividade-extra' && dados.etapas) {
+    renderizarDesafioDOM(dados, listaEl);
+    document.getElementById('toolbar-btn-gabarito').style.display = dados.gabarito?.length ? '' : 'none';
     if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => {});
   } else {
     document.getElementById('toolbar-btn-gabarito').style.display = '';
@@ -441,14 +463,44 @@ function renderizarResultado(dados, tipo, pastaId) {
       // Enunciado (texto)
       const enunciadoEl = document.createElement('p');
       enunciadoEl.className = 'exercicio-enunciado';
-      enunciadoEl.textContent = item.enunciado || '';
+      
+      let textoEnunciado = item.enunciado || '';
+      // Garante quebra de linha antes de itens romanos (I, II, III...) mesmo se colados em dois-pontos ou pontos
+      textoEnunciado = textoEnunciado.replace(/([:.\s])\s*([IVX]+\.)/g, '$1\n$2');
+      
+      enunciadoEl.innerHTML = limparLaTeX(textoEnunciado).replace(/\n/g, '<br>');
       textoEl.appendChild(enunciadoEl);
+
+      // Opções (se for múltipla escolha)
+      if (item.opcoes && Array.isArray(item.opcoes) && item.opcoes.length > 0) {
+        const opcoesContainer = document.createElement('div');
+        opcoesContainer.className = 'exercicio-opcoes';
+        
+        const letras = ['a', 'b', 'c', 'd', 'e', 'f'];
+        item.opcoes.forEach((opt, oIdx) => {
+          const optEl = document.createElement('div');
+          optEl.className = 'opcao-item';
+          
+          const letraEl = document.createElement('span');
+          letraEl.className = 'opcao-letra';
+          letraEl.textContent = `${letras[oIdx]})`;
+          
+          const labelEl = document.createElement('span');
+          labelEl.className = 'opcao-texto';
+          labelEl.textContent = limparLaTeX(opt);
+          
+          optEl.appendChild(letraEl);
+          optEl.appendChild(labelEl);
+          opcoesContainer.appendChild(optEl);
+        });
+        textoEl.appendChild(opcoesContainer);
+      }
 
       // Badge de tipo
       if (item.tipo) {
         const tipoEl = document.createElement('span');
         tipoEl.className = 'ex-tipo';
-        tipoEl.textContent = item.tipo;
+        tipoEl.textContent = item.tipo.replace('_', ' ');
         textoEl.appendChild(tipoEl);
       }
 
@@ -458,14 +510,19 @@ function renderizarResultado(dados, tipo, pastaId) {
     });
   }
 
-  // Gabarito — usa DOM puro para nunca corromper LaTeX com HTML-escaping
-  const gabarito = dados.gabarito || [];
-  listaGabi.innerHTML = '';
+  // Gabarito — salva globalmente para o modal
+  estado.gabaritoAtual = dados.gabarito || [];
+  estado.temaAtual = dados.tema || '';
 
-  if (gabarito.length > 0) {
-    gabarito.forEach((g, idx) => {
+  // Renderiza gabarito lateral simples (respostas rápidas)
+  listaGabi.innerHTML = '';
+  if (estado.gabaritoAtual.length > 0) {
+    estado.gabaritoAtual.forEach((g, idx) => {
       const itemEl = document.createElement('div');
       itemEl.className = 'gab-item';
+      itemEl.style.cursor = 'pointer';
+      itemEl.title = 'Clique para ver a resolução completa';
+      itemEl.onclick = () => abrirModalGabarito();
 
       const numEl = document.createElement('span');
       numEl.className = 'gab-num';
@@ -473,20 +530,28 @@ function renderizarResultado(dados, tipo, pastaId) {
 
       const respEl = document.createElement('span');
       respEl.className = 'gab-resp';
-      // textContent preserva LaTeX intacto — MathJax processa text nodes
-      respEl.textContent = g.resposta || '';
+      respEl.textContent = g.alternativa_correta
+        ? `Alt. ${g.alternativa_correta} — ${limparLaTeX(g.resposta || '')}`
+        : limparLaTeX(g.resposta || '');
 
       itemEl.appendChild(numEl);
       itemEl.appendChild(respEl);
       listaGabi.appendChild(itemEl);
     });
+
+    const btnCompleto = document.createElement('button');
+    btnCompleto.className = 'btn btn-primary';
+    btnCompleto.style.cssText = 'width:100%; margin-top:12px; font-size:13px;';
+    btnCompleto.innerHTML = '<i class="ph ph-books"></i> Ver resolução completa';
+    btnCompleto.onclick = abrirModalGabarito;
+    listaGabi.appendChild(btnCompleto);
   } else {
     listaGabi.innerHTML = '<p class="estado-vazio-mini">Sem gabarito disponível.</p>';
   }
 
-  // Renderiza LaTeX em ambos os painéis (enunciados + gabarito)
+  // Renderiza LaTeX
   if (window.MathJax) {
-    MathJax.typesetPromise([listaEl, listaGabi]).catch(err => console.warn('MathJax typesetPromise:', err));
+    MathJax.typesetPromise([listaEl, listaGabi]).catch(err => console.warn('MathJax:', err));
   }
 }
 
@@ -494,31 +559,47 @@ function renderizarResultado(dados, tipo, pastaId) {
 function renderizarExplicacaoDOM(dados, container) {
   container.innerHTML = ''; // limpa
 
+  // Título da explicação
+  const h2 = document.createElement('h2');
+  h2.style.cssText = 'font-family:var(--font-display); font-size:22px; color:var(--brand-900); margin-bottom:16px;';
+  h2.textContent = dados.tema || 'Explicação do Tema';
+  container.appendChild(h2);
+
+  // Figura geométrica SVG (se existir e for válida para a explicação)
+  if (dados.figura && dados.figura.tipo && window.GeoRenderer) {
+    const figWrap = GeoRenderer.criarWrapperFigura(dados.figura);
+    if (figWrap) {
+      figWrap.style.margin = '0 auto 24px';
+      container.appendChild(figWrap);
+    }
+  }
+
   // Texto principal
   const textoEl = document.createElement('div');
-  textoEl.style.cssText = 'font-size:15px; margin-bottom:20px; line-height:1.7;';
-  textoEl.textContent = dados.explicacao || '';
+  textoEl.style.cssText = 'font-size:16px; margin-bottom:28px; line-height:1.8; color:var(--text-main);';
+  // Suporte a quebras de linha no texto da explicação
+  textoEl.innerHTML = limparLaTeX(dados.explicacao || '').replace(/\n/g, '<br>');
   container.appendChild(textoEl);
 
   // Exemplos
   if (dados.exemplos && dados.exemplos.length > 0) {
     const h3 = document.createElement('h3');
-    h3.style.cssText = 'font-family:var(--font-display); margin: 28px 0 14px; color:var(--brand-900);';
+    h3.style.cssText = 'font-family:var(--font-display); margin: 32px 0 16px; color:var(--brand-900); font-size:18px;';
     h3.textContent = 'Exemplos Práticos';
     container.appendChild(h3);
 
     dados.exemplos.forEach(e => {
       const card = document.createElement('div');
-      card.style.cssText = 'background:var(--bg-app); padding:14px; border-radius:8px; margin-bottom:10px;';
+      card.style.cssText = 'background:var(--bg-app); padding:18px; border-radius:12px; margin-bottom:14px; border:1px solid var(--border-color);';
 
       const titulo = document.createElement('strong');
-      titulo.style.color = 'var(--brand-700)';
+      titulo.style.cssText = 'color:var(--brand-700); font-size:15px; display:block; margin-bottom:6px;';
       titulo.textContent = e.titulo || '';
       card.appendChild(titulo);
-      card.appendChild(document.createElement('br'));
 
-      const desc = document.createElement('span');
-      desc.textContent = e.descricao || '';
+      const desc = document.createElement('div');
+      desc.style.cssText = 'font-size:14px; line-height:1.6; color:var(--text-main);';
+      desc.innerHTML = limparLaTeX(e.descricao || '').replace(/\n/g, '<br>');
       card.appendChild(desc);
       container.appendChild(card);
     });
@@ -527,18 +608,221 @@ function renderizarExplicacaoDOM(dados, container) {
   // Dica do professor
   if (dados.dicasDoProfessor) {
     const dica = document.createElement('div');
-    dica.style.cssText = 'border-left: 4px solid var(--brand-500); padding: 14px; background: var(--brand-50); margin-top:20px; border-radius: 0 8px 8px 0;';
+    dica.style.cssText = 'border-left: 4px solid var(--brand-500); padding: 18px; background: var(--brand-50); margin-top:32px; border-radius: 0 12px 12px 0; font-size:14px;';
     const dicaLabel = document.createElement('strong');
+    dicaLabel.style.color = 'var(--brand-900)';
     dicaLabel.textContent = '💡 Dica para o Professor: ';
     dica.appendChild(dicaLabel);
-    const dicaTexto = document.createTextNode(dados.dicasDoProfessor);
+    const dicaTexto = document.createElement('span');
+    dicaTexto.textContent = dados.dicasDoProfessor;
     dica.appendChild(dicaTexto);
     container.appendChild(dica);
   }
+
+  // Links de Saiba Mais / Referências
+  if (dados.referencias && Array.isArray(dados.referencias) && dados.referencias.length > 0) {
+    const linkContainer = document.createElement('div');
+    linkContainer.style.cssText = 'margin-top:40px; padding-top:24px; border-top:1px solid var(--border-color);';
+    
+    const h4 = document.createElement('h4');
+    h4.style.cssText = 'font-family:var(--font-display); font-size:16px; color:var(--text-main); margin-bottom:16px;';
+    h4.textContent = '📚 Referências para aprofundamento (Sites Brasileiros):';
+    linkContainer.appendChild(h4);
+
+    const refGrid = document.createElement('div');
+    refGrid.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;';
+
+    dados.referencias.forEach(ref => {
+      const refCard = document.createElement('a');
+      refCard.href = ref.url;
+      refCard.target = '_blank';
+      refCard.style.cssText = 'text-decoration:none; display:block; padding:12px; background:var(--bg-app); border:1px solid var(--border-color); border-radius:8px; transition:var(--trans);';
+      
+      // Hover effect emulado via JS inline ou classes existentes
+      refCard.onmouseover = () => { refCard.style.borderColor = 'var(--brand-400)'; refCard.style.background = 'white'; };
+      refCard.onmouseout = () => { refCard.style.borderColor = 'var(--border-color)'; refCard.style.background = 'var(--bg-app)'; };
+
+      const refNome = document.createElement('strong');
+      refNome.style.cssText = 'display:block; font-size:13px; color:var(--brand-700); margin-bottom:4px;';
+      refNome.textContent = ref.nome;
+      
+      const refDesc = document.createElement('p');
+      refDesc.style.cssText = 'font-size:12px; color:var(--text-muted); line-height:1.4; margin:0;';
+      refDesc.textContent = ref.descricao;
+      
+      refCard.appendChild(refNome);
+      refCard.appendChild(refDesc);
+      refGrid.appendChild(refCard);
+    });
+
+    linkContainer.appendChild(refGrid);
+    container.appendChild(linkContainer);
+  }
+}
+
+// ============================================================
+// RENDERIZAÇÃO DE DESAFIO (Atividade Extra)
+// ============================================================
+function renderizarDesafioDOM(dados, container) {
+  container.innerHTML = '';
+
+  // Banner de contexto / missão
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%);
+    color: white; border-radius: 16px; padding: 28px 32px; margin-bottom: 32px;
+    position: relative; overflow: hidden;
+  `;
+
+  // Emoji decorativo de fundo
+  const bgEmoji = document.createElement('div');
+  bgEmoji.style.cssText = 'position:absolute; right:20px; top:10px; font-size:80px; opacity:0.15; line-height:1;';
+  bgEmoji.textContent = '🔥';
+  banner.appendChild(bgEmoji);
+
+  // Badge de nível
+  if (dados.nivel) {
+    const levelBadge = document.createElement('span');
+    levelBadge.style.cssText = 'background:rgba(255,255,255,0.2); color:white; font-size:11px; font-weight:700; padding:4px 10px; border-radius:100px; letter-spacing:0.05em; display:inline-block; margin-bottom:12px;';
+    levelBadge.textContent = `⚡ Nível ${dados.nivel}`;
+    banner.appendChild(levelBadge);
+  }
+
+  const titleEl = document.createElement('h2');
+  titleEl.style.cssText = 'color:white; font-family:var(--font-display); font-size:24px; font-weight:800; margin:0 0 12px; line-height:1.2;';
+  titleEl.textContent = dados.titulo || '🔥 Desafio Matemático';
+  banner.appendChild(titleEl);
+
+  if (dados.contexto) {
+    const ctxEl = document.createElement('p');
+    ctxEl.style.cssText = 'color:rgba(255,255,255,0.9); font-size:15px; line-height:1.6; margin:0;';
+    ctxEl.innerHTML = limparLaTeX(dados.contexto).replace(/\n/g, '<br>');
+    banner.appendChild(ctxEl);
+  }
+
+  container.appendChild(banner);
+
+  // Figura SVG (se existir)
+  if (dados.figura && dados.figura.tipo && window.GeoRenderer) {
+    const figWrap = GeoRenderer.criarWrapperFigura(dados.figura);
+    if (figWrap) {
+      figWrap.style.cssText = 'margin: 0 auto 28px; display:block; max-width: 320px;';
+      container.appendChild(figWrap);
+    }
+  }
+
+  // Etapas do desafio
+  const etapas = dados.etapas || [];
+  const etapaColors = [
+    { bg: '#f0fdf4', border: '#22c55e', badge: '#16a34a' },
+    { bg: '#fff7ed', border: '#f97316', badge: '#c2410c' },
+    { bg: '#faf5ff', border: '#a855f7', badge: '#7e22ce' },
+  ];
+
+  etapas.forEach((etapa, idx) => {
+    const col = etapaColors[idx] || etapaColors[0];
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:${col.bg}; border:1.5px solid ${col.border}; border-radius:14px;
+      padding:22px 26px; margin-bottom:20px;
+    `;
+
+    const cardHeader = document.createElement('div');
+    cardHeader.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:14px;';
+
+    const stepBadge = document.createElement('span');
+    stepBadge.style.cssText = `background:${col.badge}; color:white; font-size:11px; font-weight:700; padding:4px 12px; border-radius:100px;`;
+    stepBadge.textContent = etapa.titulo || `Etapa ${etapa.numero}`;
+    cardHeader.appendChild(stepBadge);
+    card.appendChild(cardHeader);
+
+    const enunciadoEl = document.createElement('div');
+    enunciadoEl.style.cssText = 'font-size:15px; color:#1e293b; line-height:1.7;';
+
+    let textoEnunciado = etapa.enunciado || '';
+    textoEnunciado = textoEnunciado.replace(/([:.\s])\s*([IVX]+\.)/g, '$1\n$2');
+    enunciadoEl.innerHTML = limparLaTeX(textoEnunciado).replace(/\n/g, '<br>');
+    card.appendChild(enunciadoEl);
+
+    container.appendChild(card);
+  });
 }
 
 function toggleGabarito() {
   document.getElementById('gabarito-panel').classList.toggle('ativo');
+}
+
+// ============================================================
+// MODAL DE GABARITO COMPLETO
+// ============================================================
+function abrirModalGabarito() {
+  const overlay = document.getElementById('gabarito-modal-overlay');
+  const lista = document.getElementById('gabarito-modal-lista');
+  const gabarito = estado.gabaritoAtual || [];
+
+  lista.innerHTML = '';
+
+  if (gabarito.length === 0) {
+    lista.innerHTML = '<p style="color:var(--text-muted); padding:20px;">Gabarito não disponível.</p>';
+  } else {
+    gabarito.forEach((g, idx) => {
+      const card = document.createElement('div');
+      card.className = 'gab-card';
+
+      const header = document.createElement('div');
+      header.className = 'gab-card-header';
+
+      const numBadge = document.createElement('span');
+      numBadge.className = 'gab-card-num';
+      // Usa titulo se for desafio, caso contrário usa "Questão N"
+      numBadge.textContent = g.titulo || `Questão ${g.numero || idx + 1}`;
+      header.appendChild(numBadge);
+
+      if (g.alternativa_correta) {
+        const altBadge = document.createElement('span');
+        altBadge.className = 'gab-alt-badge';
+        altBadge.textContent = `Alternativa: ${g.alternativa_correta}`;
+        header.appendChild(altBadge);
+      }
+      card.appendChild(header);
+
+      if (g.resposta) {
+        const resp = document.createElement('p');
+        resp.className = 'gab-card-resp';
+        resp.innerHTML = limparLaTeX(g.resposta).replace(/\n/g, '<br>');
+        card.appendChild(resp);
+      }
+
+      if (g.resolucao) {
+        const resolTitle = document.createElement('strong');
+        resolTitle.className = 'gab-resol-title';
+        resolTitle.textContent = '📝 Resolução passo a passo:';
+        card.appendChild(resolTitle);
+
+        const resolEl = document.createElement('div');
+        resolEl.className = 'gab-card-resolucao';
+        
+        let textoFinal = g.resolucao || '';
+        // Garante quebras antes de "Passo N:" caso a IA esqueça
+        if (!textoFinal.includes('\n')) {
+          textoFinal = textoFinal.replace(/(Passo\s+\d+[:\s])/g, '\n$1').trim();
+        }
+        // Usa innerHTML com <br> para respeitar as quebras de linha
+        resolEl.innerHTML = limparLaTeX(textoFinal).replace(/\n/g, '<br>');
+        card.appendChild(resolEl);
+      }
+
+      lista.appendChild(card);
+    });
+  }
+
+  overlay.classList.add('ativo');
+
+  if (window.MathJax) MathJax.typesetPromise([lista]).catch(() => {});
+}
+
+function fecharModalGabarito() {
+  document.getElementById('gabarito-modal-overlay').classList.remove('ativo');
 }
 
 // ============================================================
@@ -558,7 +842,14 @@ const HistoryManager = {
     try {
       const raw = localStorage.getItem(this.KEY);
       const parsed = raw ? JSON.parse(raw) : null;
-      if (parsed && parsed.pastas && Array.isArray(parsed.pastas)) return parsed;
+      if (parsed && parsed.pastas && Array.isArray(parsed.pastas)) {
+        // Limpeza imediata se houver mais de 20 conversas soltas (chats antigos)
+        if (parsed.conversas_soltas && parsed.conversas_soltas.length > 20) {
+          parsed.conversas_soltas = parsed.conversas_soltas.slice(0, 20);
+          localStorage.setItem(this.KEY, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     } catch (e) { /* reinicia */ }
     return { pastas: [], conversas_soltas: [] };
   },
@@ -614,21 +905,27 @@ const HistoryManager = {
       }
     } else {
       dados.conversas_soltas.unshift(novoItem);
-      if (dados.conversas_soltas.length > 30) dados.conversas_soltas.pop();
+      // Mantém no máximo 20 conversas soltas — as mais antigas são removidas automaticamente
+      if (dados.conversas_soltas.length > 20) dados.conversas_soltas = dados.conversas_soltas.slice(0, 20);
     }
 
     this._salvar(dados);
   },
 
-  abrirItem(itemId, pastaId) {
-    const dados = this._dados();
+  abrirItem(itemId, pastaId, isCloud = false) {
     let item = null;
 
-    if (pastaId) {
-      const pasta = dados.pastas.find(p => p.id === pastaId);
-      item = pasta?.itens.find(i => i.id === itemId);
+    if (isCloud) {
+      // Busca no cache temporário criado durante a renderização da sidebar
+      item = (this._cacheCloud || []).find(i => i.id === itemId);
     } else {
-      item = dados.conversas_soltas.find(i => i.id === itemId);
+      const dados = this._dados();
+      if (pastaId) {
+        const pasta = dados.pastas.find(p => p.id === pastaId);
+        item = pasta?.itens.find(i => i.id === itemId);
+      } else {
+        item = dados.conversas_soltas.find(i => i.id === itemId);
+      }
     }
 
     if (!item) return;
@@ -639,37 +936,58 @@ const HistoryManager = {
     navegarPara('result');
   },
 
-  renderizarSidebar() {
+  excluirConversa(itemId, pastaId) {
+    const dados = this._dados();
+    if (pastaId) {
+      const pasta = dados.pastas.find(p => p.id === pastaId);
+      if (pasta) pasta.itens = pasta.itens.filter(i => i.id !== itemId);
+    } else {
+      dados.conversas_soltas = dados.conversas_soltas.filter(i => i.id !== itemId);
+    }
+    this._salvar(dados);
+    mostrarToast('Conversa excluída.', 'info');
+  },
+
+  async renderizarSidebar() {
     const nav = document.getElementById('sidebar-nav');
     if (!nav) return;
 
-    const dados = this._dados();
     const labels = { exercicios: 'Lista', prova: 'Prova', 'atividade-extra': 'Extra', explicacao: 'Explicação' };
+    const dadosLocais = this._dados();
+    
+    // Decisão: Usar histórico da nuvem se estiver logado, caso contrário usa local
+    const usuario = window.Auth?.estado?.usuario;
+    let soltas = [];
+    let isCloud = false;
+
+    if (usuario) {
+      try {
+        const cloudData = await obterHistoricoCloud();
+        soltas = cloudData.map(c => ({
+          id: c.id,
+          tema: c.title,
+          tipo: c.type,
+          data: c.created_at,
+          dados: c.generated_content,
+          isCloud: true
+        }));
+        this._cacheCloud = soltas;
+        isCloud = true;
+      } catch (e) {
+        soltas = dadosLocais.conversas_soltas;
+      }
+    } else {
+      soltas = dadosLocais.conversas_soltas;
+    }
 
     let html = '';
 
-    // ---- Conversas soltas recentes ----
-    const soltas = dados.conversas_soltas.slice(0, 8);
-    if (soltas.length > 0) {
-      html += `<div class="nav-section"><div class="nav-section-title">Recentes</div>`;
-      html += soltas.map(i => `
-        <div class="historico-item" onclick="HistoryManager.abrirItem('${i.id}', null)">
-          <div class="historico-titulo">${escaparHtml(i.tema)}</div>
-          <div class="historico-meta">
-            <span class="historico-tipo-badge">${labels[i.tipo] || 'Conteúdo'}</span>
-            ${new Date(i.data).toLocaleDateString('pt-BR')}
-          </div>
-        </div>
-      `).join('');
-      html += `</div>`;
-    }
-
-    // ---- Pastas ----
-    if (dados.pastas.length > 0) {
-      html += `<div class="nav-section"><div class="nav-section-title">Pastas / Aulas</div>`;
-      html += dados.pastas.map(pasta => {
+    // ---- 1. Pastas (Sempre Locais nesta etapa) ----
+    if (dadosLocais.pastas.length > 0) {
+      html += `<div class="nav-section"><div class="nav-section-title">Minhas Pastas (Local)</div>`;
+      html += dadosLocais.pastas.map(pasta => {
         const isAtiva = estado.pastaAtivaId === pasta.id;
-        const isAberta = isAtiva; // pastas ativas ficam expandidas por default
+        const isAberta = isAtiva;
         return `
           <div class="pasta-item ${isAtiva ? 'ativa' : ''} ${isAberta ? 'aberta' : ''}" id="pasta-${pasta.id}">
             <div class="pasta-header" onclick="togglePasta('${pasta.id}')">
@@ -695,11 +1013,16 @@ const HistoryManager = {
                 ? '<div class="estado-vazio-mini">Pasta vazia</div>'
                 : pasta.itens.map(i => `
                     <div class="historico-item" onclick="HistoryManager.abrirItem('${i.id}', '${pasta.id}')">
-                      <div class="historico-titulo">${escaparHtml(i.tema)}</div>
-                      <div class="historico-meta">
-                        <span class="historico-tipo-badge">${labels[i.tipo] || 'Conteúdo'}</span>
-                        ${new Date(i.data).toLocaleDateString('pt-BR')}
+                      <div class="historico-item-conteudo">
+                        <div class="historico-titulo">${escaparHtml(i.tema)}</div>
+                        <div class="historico-meta">
+                          <span class="historico-tipo-badge">${labels[i.tipo] || 'Conteúdo'}</span>
+                          ${new Date(i.data).toLocaleDateString('pt-BR')}
+                        </div>
                       </div>
+                      <button class="btn-excluir-conversa" title="Excluir" onclick="event.stopPropagation(); HistoryManager.excluirConversa('${i.id}', '${pasta.id}')">
+                        <i class="ph ph-trash"></i>
+                      </button>
                     </div>
                   `).join('')
               }
@@ -707,6 +1030,28 @@ const HistoryManager = {
           </div>`;
       }).join('');
       html += '</div>';
+    }
+
+    // ---- 2. Conversas soltas recentes ----
+    if (soltas.length > 0) {
+      html += `<div class="nav-section"><div class="nav-section-title">${isCloud ? 'Nuvem (Sincronizado)' : 'Recentes (Local)'}</div>`;
+      html += soltas.map(i => `
+        <div class="historico-item historico-item-deletavel" onclick="HistoryManager.abrirItem('${i.id}', null, ${i.isCloud || false})">
+          <div class="historico-item-conteudo">
+            <div class="historico-titulo">${escaparHtml(i.tema)}</div>
+            <div class="historico-meta">
+              <span class="historico-tipo-badge">${labels[i.tipo] || 'Conteúdo'}</span>
+              ${new Date(i.data).toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+          ${!i.isCloud ? `
+          <button class="btn-excluir-conversa" title="Excluir" onclick="event.stopPropagation(); HistoryManager.excluirConversa('${i.id}', null)">
+            <i class="ph ph-trash"></i>
+          </button>
+          ` : ''}
+        </div>
+      `).join('');
+      html += `</div>`;
     }
 
     // Estado completamente vazio
@@ -748,7 +1093,7 @@ async function verificarStatusBackend() {
     const r = await verificarBackend();
     estado.backendOnline = true;
     dot.className = 'api-dot ok';
-    span.innerHTML = `Online · <small>${r.modelo || 'gpt-4o-mini'}</small>`;
+    span.textContent = 'Online';
   } catch (e) {
     dot.className = 'api-dot err';
     span.textContent = 'Servidor offline';
@@ -777,4 +1122,18 @@ function escaparHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * Converte delimitadores de LaTeX $...$ para \(...\) caso a IA erre
+ */
+function limparLaTeX(texto) {
+  if (!texto) return '';
+  // Substitui pares de $ por \( e \)
+  // Regex simples que assume que $ sempre vem em pares para fórmulas
+  let count = 0;
+  return texto.replace(/\$/g, () => {
+    count++;
+    return count % 2 === 1 ? '\\(' : '\\)';
+  });
 }

@@ -7,6 +7,8 @@
   <title>ProMat — Workspace Educacional</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     MathJax = {
       tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
@@ -61,6 +63,22 @@
     </nav>
 
     <div class="sidebar-footer">
+      <!-- Auth: Botão Entrar (visível quando deslogado) -->
+      <button class="btn-auth-entrar" id="auth-btn" onclick="Auth.abrirModal()">
+        <i class="ph ph-sign-in"></i>
+        <span>Entrar / Criar conta</span>
+      </button>
+      <!-- Auth: Info do usuário (visível quando logado) -->
+      <div class="auth-user-info" id="auth-user-info" style="display:none;">
+        <i class="ph-fill ph-user-circle"></i>
+        <div class="auth-user-details">
+          <span class="auth-email"></span>
+          <button class="btn-logout" onclick="Auth.logout()" title="Sair">
+            <i class="ph ph-sign-out"></i> Sair
+          </button>
+        </div>
+      </div>
+      <!-- Status do servidor -->
       <div class="api-status-mini">
         <div class="api-dot" id="api-dot"></div>
         <span id="api-status-texto">Verificando...</span>
@@ -207,6 +225,20 @@
             <input type="hidden" id="nivel-valor" value="facil">
           </div>
 
+          <div class="form-group" id="grupo-tipo-questoes" style="display:none;">
+            <label for="tipo-questoes">Estilo das Questões <span class="req">*</span></label>
+            <div class="select-wrapper">
+              <select id="tipo-questoes">
+                <option value="misto" selected>Misto (Um pouco de tudo)</option>
+                <option value="multipla_escolha">Múltipla Escolha (Marcar X)</option>
+                <option value="dissertativa">Dissertativa (Resposta aberta)</option>
+                <option value="calculo">Cálculos e Operações</option>
+                <option value="vf">Verdadeiro ou Falso</option>
+              </select>
+              <i class="ph ph-caret-down"></i>
+            </div>
+          </div>
+
           <!-- Destino: pasta ou conversa solta -->
           <div id="form-destino-container">
             <!-- Preenchido via JS — mostra pasta atual ou opção de salvar avulso -->
@@ -275,6 +307,19 @@
   </div><!-- /main-content -->
 </div><!-- /layout-wrapper -->
 
+<!-- ===================== MODAL: GABARITO COMPLETO ===================== -->
+<div class="overlay" id="gabarito-modal-overlay">
+  <div class="modal gabarito-modal-full">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="ph-fill ph-key"></i> Gabarito Completo</h3>
+      <button class="btn-icon" onclick="fecharModalGabarito()"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="gabarito-modal-body">
+      <div class="gabarito-modal-questoes" id="gabarito-modal-lista"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MODAL: NOVA PASTA ===================== -->
 <div class="overlay" id="modal-nova-pasta-overlay">
   <div class="modal">
@@ -335,10 +380,40 @@
 <!-- ===================== TOASTS ===================== -->
 <div class="toast-system" id="toast-container"></div>
 
+<!-- ===================== MODAL: AUTH ===================== -->
+<div class="overlay" id="auth-modal-overlay">
+  <div class="modal auth-modal">
+    <div class="auth-modal-header">
+      <h3 class="auth-title" id="auth-title">Entrar no ProMat</h3>
+      <button class="btn-icon" onclick="Auth.fecharModal()" title="Fechar"><i class="ph ph-x"></i></button>
+    </div>
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab ativo" id="auth-tab-login" onclick="trocarTabAuth('login')">Entrar</button>
+      <button class="auth-tab" id="auth-tab-cadastro" onclick="trocarTabAuth('cadastro')">Criar conta</button>
+    </div>
+    <!-- Formulário -->
+    <div class="auth-modal-body">
+      <div class="form-group">
+        <label for="auth-email">E-mail</label>
+        <input type="email" id="auth-email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="auth-password">Senha</label>
+        <input type="password" id="auth-password" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+      </div>
+      <p class="auth-error" id="auth-error"></p>
+      <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== SCRIPTS ===================== -->
 <script src="js/api.js"></script>
 <script src="js/geometry.js"></script>
 <script src="js/printer.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 
 </body>

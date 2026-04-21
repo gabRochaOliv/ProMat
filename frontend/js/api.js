@@ -15,13 +15,18 @@ let _apiKeyOverride = null;
 
 /**
  * Faz requisição POST para o backend
+ * Envia o token de auth automaticamente se o usuário estiver logado
  */
 async function apiFetch(endpoint, body) {
+  const headers = { 'Content-Type': 'application/json' };
+
+  // Envia token de auth se disponível (window.Auth pode não existir em testes)
+  const token = window.Auth?.getToken?.();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -58,8 +63,8 @@ async function gerarExercicios({ serie, tema, nivel, quantidade }) {
 /**
  * Gera prova completa
  */
-async function gerarProva({ serie, tema, totalQuestoes }) {
-  return await apiFetch('/gerar/prova', { serie, tema, totalQuestoes });
+async function gerarProva({ serie, tema, totalQuestoes, tipoQuestoes, nivel }) {
+  return await apiFetch('/gerar/prova', { serie, tema, totalQuestoes, tipoQuestoes, nivel });
 }
 
 /**
@@ -74,4 +79,17 @@ async function gerarAtividadeExtra({ serie, tema, tipo }) {
  */
 async function gerarExplicacao({ serie, tema }) {
   return await apiFetch('/gerar/explicacao', { serie, tema });
+}
+
+/**
+ * Busca histórico do banco de dados (Supabase) via backend
+ */
+async function obterHistoricoCloud() {
+  const headers = {};
+  const token = window.Auth?.getToken?.();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}/historico`, { headers });
+  if (!response.ok) return [];
+  return await response.json();
 }

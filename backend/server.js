@@ -26,20 +26,23 @@ const allowedOrigins = [
   'http://localhost:5500',
   `http://localhost:${process.env.PORT || 3001}`,
   `http://127.0.0.1:${process.env.PORT || 3001}`,
-  'null', // file:// protocol (abertura direta de arquivo)
+  'null', // file:// protocol
+].filter(Boolean);
+
+// Em produção, aceita qualquer subdomínio Vercel
+const allowedPatterns = [
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permite sem origin (curl, Postman, file://)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Origem não permitida pelo CORS'));
-    }
+    if (!origin) return callback(null, true); // curl, Postman, file://
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (allowedPatterns.some(p => p.test(origin))) return callback(null, true);
+    callback(new Error('Origem não permitida pelo CORS'));
   },
   methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // ======================================
@@ -68,6 +71,32 @@ app.use(express.static(frontendPath));
 // ======================================
 app.use('/api/gerar', gerarRoutes);
 
+// Busca histórico do usuário
+app.get('/api/historico', async (req, res) => {
+  const { verificarToken } = require('./services/supabaseService');
+  const { createClient } = require('@supabase/supabase-js');
+  
+  const auth = req.headers['authorization'] || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  
+  const usuario = await verificarToken(token);
+  if (!usuario) return res.status(401).json({ erro: 'Não autenticado' });
+
+  // Criamos um client com service_role para buscar sem restrições de RLS se necessário,
+  // mas aqui o ideal é usar as chaves do env.
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  
+  const { data, error } = await supabase
+    .from('generations')
+    .select('*')
+    .eq('user_id', usuario.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) return res.status(500).json({ erro: error.message });
+  res.json(data);
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -76,6 +105,14 @@ app.get('/api/health', (req, res) => {
     provedor: process.env.AI_PROVIDER || 'openai',
     modelo: process.env.AI_MODEL || 'gpt-4o-mini',
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Configuração pública — expõe apenas variáveis seguras para o frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL || null,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || null,
   });
 });
 
@@ -100,6 +137,10 @@ app.listen(PORT, () => {
   console.log(`║  Servidor rodando: http://localhost:${PORT}  ║`);
   console.log(`║  Provedor IA: ${(process.env.AI_PROVIDER || 'openai').padEnd(26)}║`);
   console.log(`║  Modelo: ${(process.env.AI_MODEL || 'gpt-4o-mini').padEnd(32)}║`);
+  
+  const sbStatus = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) ? 'Configurado ✅' : 'Pendente ❌';
+  console.log(`║  Supabase: ${sbStatus.padEnd(30)}║`);
+  console.log(`║  Frontend: http://localhost:${PORT.toString().padEnd(16)}║`);
   console.log('╚══════════════════════════════════════════╝\n');
 
   if (!process.env.OPENAI_API_KEY && process.env.AI_PROVIDER !== 'gemini') {

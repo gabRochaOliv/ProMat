@@ -12,8 +12,17 @@ const {
   buildAtividadeExtraPrompt,
   buildExplicacaoPrompt,
 } = require('../services/promptBuilder');
+const { validarTema } = require('../services/moderationService');
+const { verificarToken, salvarGeracao } = require('../services/supabaseService');
 
 const MAX_EXERCISES = parseInt(process.env.MAX_EXERCISES) || 20;
+
+// Helper: extrai Bearer token do header Authorization
+function extractToken(req) {
+  const auth = req.headers['authorization'] || '';
+  if (auth.startsWith('Bearer ')) return auth.slice(7);
+  return null;
+}
 
 // ======================================
 // VALIDAÇÃO COMUM
@@ -68,6 +77,12 @@ router.post('/exercicios', async (req, res) => {
       return res.status(400).json({ erro: 'Tema inválido' });
     }
 
+    // Moderação de conteúdo
+    const moderacao = validarTema(temaClean);
+    if (!moderacao.valido) {
+      return res.status(400).json({ erro: moderacao.motivo });
+    }
+
     const prompt = buildExerciseListPrompt({
       serie,
       tema: temaClean,
@@ -76,6 +91,19 @@ router.post('/exercicios', async (req, res) => {
     });
 
     const resultado = await callAI(prompt);
+
+    // Salva geração no banco (não-bloqueante — não falha se DB estiver fora)
+    const token = extractToken(req);
+    verificarToken(token).then(usuario => {
+      salvarGeracao({
+        userId: usuario?.id || null,
+        sessionId: null,
+        type: 'exercicios',
+        title: temaClean,
+        promptData: { serie, tema: temaClean, nivel, quantidade: qtd },
+        generatedContent: resultado,
+      });
+    }).catch(() => {});
 
     return res.json({
       sucesso: true,
@@ -97,7 +125,7 @@ router.post('/exercicios', async (req, res) => {
 // ======================================
 router.post('/prova', async (req, res) => {
   try {
-    const { serie, tema, totalQuestoes } = req.body;
+    const { serie, tema, totalQuestoes, tipoQuestoes, nivel } = req.body;
 
     if (!serie || !tema) {
       return res.status(400).json({ erro: 'Campos obrigatórios: serie, tema' });
@@ -108,16 +136,43 @@ router.post('/prova', async (req, res) => {
     }
 
     const qtd = parseInt(totalQuestoes) || 10;
-    const qtdLimitada = Math.min(Math.max(qtd, 5), 15); // entre 5 e 15
+    // V/F e Múltipla Escolha ocupam muito espaço no JSON (muitos tokens)
+    let maxQuestoes = 10;
+    if (tipoQuestoes === 'vf') maxQuestoes = 5;
+    else if (tipoQuestoes === 'multipla_escolha') maxQuestoes = 7;
+    
+    const qtdLimitada = Math.min(Math.max(qtd, 3), maxQuestoes);
 
     const temaClean = sanitizeText(tema);
+    
+    // Moderação de conteúdo
+    const moderacao = validarTema(temaClean);
+    if (!moderacao.valido) {
+      return res.status(400).json({ erro: moderacao.motivo });
+    }
+
     const prompt = buildProvaPrompt({
       serie,
       tema: temaClean,
       totalQuestoes: qtdLimitada,
+      tipoQuestoes,
+      nivel
     });
 
     const resultado = await callAI(prompt);
+
+    // Salva geração no banco (não-bloqueante)
+    const token = extractToken(req);
+    verificarToken(token).then(usuario => {
+      salvarGeracao({
+        userId: usuario?.id || null,
+        sessionId: null,
+        type: 'prova',
+        title: temaClean,
+        promptData: { serie, tema: temaClean, totalQuestoes: qtdLimitada, tipoQuestoes, nivel },
+        generatedContent: resultado,
+      });
+    }).catch(() => {});
 
     return res.json({
       sucesso: true,
@@ -139,7 +194,7 @@ router.post('/prova', async (req, res) => {
 // ======================================
 router.post('/atividade-extra', async (req, res) => {
   try {
-    const { serie, tema, tipo } = req.body;
+    const { serie, tema, tipo, nivel } = req.body;
 
     if (!serie || !tema) {
       return res.status(400).json({ erro: 'Campos obrigatórios: serie, tema' });
@@ -152,13 +207,33 @@ router.post('/atividade-extra', async (req, res) => {
     const tipoValido = ['desafio', 'atividade'].includes(tipo) ? tipo : 'atividade';
     const temaClean = sanitizeText(tema);
 
+    // Moderação de conteúdo
+    const moderacao = validarTema(temaClean);
+    if (!moderacao.valido) {
+      return res.status(400).json({ erro: moderacao.motivo });
+    }
+
     const prompt = buildAtividadeExtraPrompt({
       serie,
       tema: temaClean,
       tipo: tipoValido,
+      nivel,
     });
 
     const resultado = await callAI(prompt);
+
+    // Salva geração no banco (não-bloqueante)
+    const token = extractToken(req);
+    verificarToken(token).then(usuario => {
+      salvarGeracao({
+        userId: usuario?.id || null,
+        sessionId: null,
+        type: 'atividade-extra',
+        title: temaClean,
+        promptData: { serie, tema: temaClean, tipo: tipoValido, nivel },
+        generatedContent: resultado,
+      });
+    }).catch(() => {});
 
     return res.json({
       sucesso: true,
@@ -191,9 +266,29 @@ router.post('/explicacao', async (req, res) => {
     }
 
     const temaClean = sanitizeText(tema);
+
+    // Moderação de conteúdo
+    const moderacao = validarTema(temaClean);
+    if (!moderacao.valido) {
+      return res.status(400).json({ erro: moderacao.motivo });
+    }
+
     const prompt = buildExplicacaoPrompt({ serie, tema: temaClean });
 
     const resultado = await callAI(prompt);
+
+    // Salva geração no banco (não-bloqueante)
+    const token = extractToken(req);
+    verificarToken(token).then(usuario => {
+      salvarGeracao({
+        userId: usuario?.id || null,
+        sessionId: null,
+        type: 'explicacao',
+        title: temaClean,
+        promptData: { serie, tema: temaClean },
+        generatedContent: resultado,
+      });
+    }).catch(() => {});
 
     return res.json({
       sucesso: true,
@@ -205,6 +300,59 @@ router.post('/explicacao', async (req, res) => {
     return res.status(500).json({
       erro: 'Erro ao gerar a explicação.',
       detalhe: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+});
+
+// ======================================
+// POST /api/gerar/chat-gabarito
+// Chat contextual sobre o gabarito
+// ======================================
+router.post('/chat-gabarito', async (req, res) => {
+  try {
+    const { pergunta, contextoGabarito, tema } = req.body;
+
+    if (!pergunta) {
+      return res.status(400).json({ erro: 'A pergunta é obrigatória.' });
+    }
+
+    const contextoPergunta = contextoGabarito
+      ? `Contexto do gabarito:\n${contextoGabarito}\n\n`
+      : '';
+
+    const prompt = `Você é um professor especialista em Matemática do Ensino Fundamental. 
+O professor está revisando um gabarito sobre "${tema || 'Matemática'}" e tem uma dúvida.
+
+${contextoPergunta}Pergunta do professor: "${pergunta}"
+
+Responda de forma clara, pedagógica e objetiva. Se for uma dúvida sobre a resolução, explique o raciocínio passo a passo. 
+Não gere exercícios novos. Apenas explique o conteúdo pedido.
+Use LaTeX para expressões matemáticas usando a notação \\( expressao \\) para inline e $$ expressao $$ para blocos.
+Responda diretamente, sem introduções longas.`;
+
+    const systemPrompt = 'Você é um professor de Matemática experiente respondendo dúvidas pedagógicas de outros professores. Seja claro, preciso e use LaTeX para expressões matemáticas.';
+
+    const resultado = await callAI(prompt, systemPrompt, false);
+
+    // A IA retorna JSON — mas aqui queremos texto. Se retornou JSON, extraímos a resposta.
+    let resposta = '';
+    if (typeof resultado === 'string') {
+      resposta = resultado;
+    } else if (resultado.resposta) {
+      resposta = resultado.resposta;
+    } else if (resultado.answer) {
+      resposta = resultado.answer;
+    } else {
+      resposta = JSON.stringify(resultado);
+    }
+
+    return res.json({ sucesso: true, resposta });
+
+  } catch (err) {
+    console.error('[ERRO DETALHADO] /api/gerar/chat-gabarito:', err);
+    return res.status(500).json({
+      erro: 'Erro ao processar a pergunta.',
+      detalhe: err.message
     });
   }
 });
