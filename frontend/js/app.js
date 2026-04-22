@@ -1230,8 +1230,21 @@ window.mostrarModalUpgrade = function(mensagem) {
   }
 };
 
-window.iniciarCheckoutPremium = function() {
-  // Lógica futura de integração do Checkout (ex: redirecionamento Stripe/Cakto)
-  mostrarToast('Integração de checkout em breve!', 'info');
-  // document.getElementById('modal-upgrade-overlay').classList.remove('ativo');
+window.iniciarCheckoutPremium = function(plano) {
+  const email = window.Auth?.estado?.usuario?.email || '';
+  
+  // Envia o e-mail na URL para pré-preencher o checkout, se a plataforma suportar
+  const queryParam = email ? `?email=${encodeURIComponent(email)}` : '';
+
+  let checkoutUrl = '';
+  if (plano === 'anual') {
+    checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
+  } else if (plano === 'mensal') {
+    checkoutUrl = 'https://pay.cakto.com.br/zscdfkk' + queryParam;
+  } else {
+    checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
+  }
+
+  // Redireciona o usuário (em nova aba)
+  window.open(checkoutUrl, '_blank');
 };

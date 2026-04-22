@@ -453,26 +453,44 @@
 
 <!-- ===================== MODAL: UPGRADE PREMIUM ===================== -->
 <div class="overlay" id="modal-upgrade-overlay">
-  <div class="modal" style="max-width: 440px; text-align: center; padding: 32px 24px;">
-    <div class="modal-header" style="justify-content: flex-end; padding: 0; border: none; margin-bottom: -20px;">
+  <div class="modal modal-upgrade">
+    <div class="modal-header" style="justify-content: flex-end; padding: 0; border: none; margin-bottom: -10px;">
       <button class="btn-icon" onclick="document.getElementById('modal-upgrade-overlay').classList.remove('ativo')"><i class="ph ph-x"></i></button>
     </div>
-    <div style="font-size: 48px; color: var(--primary); margin-bottom: 16px;">
-      <i class="ph-fill ph-crown"></i>
-    </div>
-    <h2 style="font-size: 22px; margin-bottom: 12px; color: var(--text-main);">Atualize para o Premium</h2>
-    <p id="upgrade-mensagem" style="font-size: 15px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
-      Você atingiu seu limite gratuito. Desbloqueie gerações ilimitadas e ferramentas profissionais.
+    
+    <h2 style="font-size: 26px; font-family: var(--font-display); margin-bottom: 8px; color: var(--text-main);">Atualize para o Premium <i class="ph-fill ph-crown" style="color: var(--brand-500); vertical-align: middle;"></i></h2>
+    <p id="upgrade-mensagem" style="font-size: 15px; color: var(--text-muted); margin-bottom: 24px;">
+      Você atingiu o limite gratuito. Desbloqueie todas as ferramentas exclusivas e crie sem interrupções.
     </p>
-    <ul style="text-align: left; margin: 0 auto 24px auto; max-width: 320px; list-style: none; padding: 0; color: var(--text-main); font-size: 14px; line-height: 1.8;">
-      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Gerações de exercícios ilimitadas</li>
-      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Impressão e PDF profissional</li>
-      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Acesso total a gabaritos completos</li>
-      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Organização infinita em pastas</li>
+
+    <!-- Benefícios (Opcional manter no topo se a lista for curta, ou dentro do card. Vamos deixar centralizado no topo) -->
+    <ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; list-style: none; padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--text-main);">
+      <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Gerações ilimitadas</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Exportação em PDF</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Gabaritos completos</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Pastas infinitas</li>
     </ul>
-    <button class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 12px;" onclick="iniciarCheckoutPremium()">
-      <i class="ph-fill ph-rocket-launch"></i> Quero ser Premium
-    </button>
+
+    <div class="pricing-grid">
+      <!-- Card Mensal -->
+      <div class="pricing-card">
+        <div class="pricing-title">Plano Mensal</div>
+        <div class="pricing-price">R$ 24,90<span>/mês</span></div>
+        <div class="pricing-desc">Acesso completo com pagamento mês a mês, sem fidelidade. Cancele quando quiser.</div>
+        <button class="btn btn-outline" style="width: 100%;" onclick="iniciarCheckoutPremium('mensal')">Assinar mensal</button>
+      </div>
+
+      <!-- Card Anual -->
+      <div class="pricing-card featured">
+        <div class="pricing-card-badge">Mais escolhido</div>
+        <div class="pricing-title">Plano Anual</div>
+        <div class="pricing-price">R$ 249,00<span>/ano</span></div>
+        <div class="pricing-desc">Dois meses grátis! Acesso ininterrupto durante todo o ano letivo para organizar suas aulas com tranquilidade.</div>
+        <button class="btn btn-primary" style="width: 100%; box-shadow: 0 4px 12px rgba(37,99,235,0.3);" onclick="iniciarCheckoutPremium('anual')">
+          <i class="ph-fill ph-rocket-launch"></i> Assinar anual
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

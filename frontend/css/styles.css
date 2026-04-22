@@ -1636,3 +1636,81 @@ input:focus, select:focus, textarea:focus {
   .guest-bloqueio-titulo { font-size: 18px; }
   .guest-save-banner-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
+
+/* =========================================
+   MODAL DE UPGRADE / PRICING
+========================================= */
+.modal-upgrade {
+  max-width: 680px !important; /* Maior para caber os 2 cards confortavelmente */
+  padding: 32px 24px;
+}
+.pricing-grid {
+  display: flex;
+  gap: 20px;
+  margin-top: 24px;
+  align-items: stretch;
+}
+@media (max-width: 600px) {
+  .pricing-grid { flex-direction: column; }
+}
+.pricing-card {
+  flex: 1;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: var(--trans);
+}
+.pricing-card:hover {
+  border-color: var(--brand-400);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.pricing-card.featured {
+  border: 2px solid var(--brand-500);
+  background: linear-gradient(to bottom, #eff6ff, #ffffff);
+}
+.pricing-card-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brand-600);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+.pricing-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.pricing-price {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand-700);
+  margin-bottom: 4px;
+  font-family: var(--font-display);
+}
+.pricing-price span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.pricing-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.5;
+  flex: 1;
+}
