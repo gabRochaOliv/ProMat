@@ -14,6 +14,7 @@
 const AuthState = {
   usuario: null,        // objeto do usuário autenticado
   sessao: null,         // objeto de sessão (contém access_token)
+  nome: '',             // nome completo do usuário
   plano: 'guest',       // guest | free | premium
   carregando: true,     // true enquanto verifica sessão inicial
 };
@@ -74,9 +75,27 @@ async function initAuth() {
 async function carregarPerfil(userId) {
   const sb = window.SupabaseClient.get();
   if (!sb || !userId) return;
-  const { data, error } = await sb.from('profiles').select('plan').eq('id', userId).single();
+  const { data, error } = await sb.from('profiles').select('plan, full_name').eq('id', userId).single();
   if (!error && data) {
+    const planoAnterior = AuthState.plano;
     AuthState.plano = data.plan;
+    AuthState.nome = data.full_name || '';
+
+    // Toast de ativação Premium
+    if (data.plan === 'premium') {
+      const storageKey = `premium_toast_${userId}`;
+      if (!localStorage.getItem(storageKey)) {
+        if (window.mostrarToast) {
+          mostrarToast('Premium ativado com sucesso! Seu acesso completo já está liberado.', 'sucesso');
+        }
+        localStorage.setItem(storageKey, 'true');
+      }
+    }
+    
+    // Força a atualização da UI caso o perfil tenha sido carregado tardiamente
+    if (planoAnterior !== data.plan) {
+      atualizarUIAuth();
+    }
   }
 }
 
@@ -123,11 +142,19 @@ async function authLogin(email, password) {
   return data;
 }
 
-async function authCadastro(email, password) {
+async function authCadastro(email, password, name) {
   const sb = window.SupabaseClient.get();
   if (!sb) throw new Error('Serviço de auth indisponível.');
 
-  const { data, error } = await sb.auth.signUp({ email, password });
+  const { data, error } = await sb.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      data: {
+        full_name: name
+      }
+    }
+  });
   if (error) throw new Error(error.message);
   return data;
 }
@@ -147,8 +174,50 @@ function atualizarUIAuth() {
   // Botão/indicador na sidebar
   const authBtn = document.getElementById('auth-btn');
   const authInfo = document.getElementById('auth-user-info');
+  const planBadge = document.getElementById('plan-badge');
+
+  if (planBadge) {
+    if (usuario) {
+      planBadge.style.display = 'inline-block';
+      if (AuthState.plano === 'premium') {
+        planBadge.textContent = 'Plano Premium';
+        planBadge.className = 'plan-badge premium';
+      } else {
+        planBadge.textContent = 'Plano Grátis';
+        planBadge.className = 'plan-badge free';
+      }
+    } else {
+      planBadge.style.display = 'none';
+    }
+  }
+
+  // Controle visual dos cards bloqueados (Premium Only)
+  const cardsPremium = document.querySelectorAll('.action-card.premium-only');
+  const isPremium = AuthState.plano === 'premium';
+
+  cardsPremium.forEach(card => {
+    const tag = card.querySelector('.card-premium-tag');
+    if (isPremium) {
+      card.classList.remove('premium-locked');
+      if (tag) tag.style.display = 'none';
+    } else {
+      card.classList.add('premium-locked');
+      if (tag) tag.style.display = 'block';
+    }
+  });
 
   if (!authBtn) return; // elementos ainda não renderizados
+
+  // Saudação personalizada na Home
+  const greetingEl = document.getElementById('main-greeting');
+  if (greetingEl) {
+    if (usuario && AuthState.nome) {
+      const primeiroNome = AuthState.nome.trim().split(' ')[0];
+      greetingEl.innerHTML = `O que vamos criar hoje, <span>${primeiroNome}?</span>`;
+    } else {
+      greetingEl.innerHTML = `O que vamos criar <span>hoje?</span>`;
+    }
+  }
 
   if (usuario) {
     // Usuário logado
@@ -156,7 +225,10 @@ function atualizarUIAuth() {
     if (authInfo) {
       authInfo.style.display = 'flex';
       const emailEl = authInfo.querySelector('.auth-email');
-      if (emailEl) emailEl.textContent = usuario.email;
+      if (emailEl) {
+        emailEl.textContent = AuthState.nome || usuario.email;
+        emailEl.title = usuario.email; // Mostra email no hover se tiver nome
+      }
     }
   } else {
     // Não logado
@@ -189,6 +261,10 @@ function trocarTabAuth(tab) {
   document.getElementById('auth-title').textContent = isLogin ? 'Entrar no ProMat' : 'Criar sua conta';
   document.getElementById('auth-error').textContent = '';
   window._authTabAtiva = tab;
+
+  // Mostra/esconde campo de nome
+  const nameGroup = document.getElementById('auth-name-group');
+  if (nameGroup) nameGroup.style.display = isLogin ? 'none' : 'block';
 }
 
 async function submitAuth() {
@@ -200,22 +276,28 @@ async function submitAuth() {
   errorEl.textContent = '';
 
   if (!email || !password) {
-    errorEl.textContent = 'Preencha e-mail e senha.';
+    errorEl.textContent = 'Preencha todos os campos.';
+    return;
+  }
+
+  const name = document.getElementById('auth-name').value.trim();
+  if (window._authTabAtiva === 'cadastro' && !name) {
+    errorEl.textContent = 'Informe seu nome.';
     return;
   }
 
   btnEl.disabled = true;
-  btnEl.textContent = 'Aguarde...';
+  btnEl.textContent = 'Processando...';
 
   try {
-    if (window._authTabAtiva === 'cadastro') {
-      await authCadastro(email, password);
-      errorEl.style.color = '#10b981';
-      errorEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar.';
-    } else {
+    if (window._authTabAtiva === 'login') {
       await authLogin(email, password);
       fecharModalAuth();
       mostrarToast('Bem-vindo ao ProMat!', 'sucesso');
+    } else {
+      await authCadastro(email, password, name);
+      errorEl.style.color = '#10b981';
+      errorEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar.';
     }
   } catch (err) {
     errorEl.style.color = '#ef4444';

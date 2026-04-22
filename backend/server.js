@@ -132,7 +132,7 @@ app.listen(PORT, () => {
   console.log(`║  Servidor rodando: http://localhost:${PORT}  ║`);
   console.log(`║  Provedor IA: ${(process.env.AI_PROVIDER || 'openai').padEnd(26)}║`);
   console.log(`║  Modelo: ${(process.env.AI_MODEL || 'gpt-4o-mini').padEnd(32)}║`);
-  
+
   const sbStatus = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) ? 'Configurado ✅' : 'Pendente ❌';
   console.log(`║  Supabase: ${sbStatus.padEnd(30)}║`);
   console.log(`║  Frontend: http://localhost:${PORT.toString().padEnd(16)}║`);
@@ -143,3 +143,5 @@ app.listen(PORT, () => {
     console.warn('   Copie o arquivo .env.example para .env e configure sua chave.\n');
   }
 });
+
+module.exports = app;

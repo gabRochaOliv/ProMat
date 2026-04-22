@@ -76,7 +76,16 @@ async function checkUsageLimits(req, res, next) {
     const perfil = await obterPerfilUsuario(usuario.id);
     req.plano = perfil.plan;
     
-    if (perfil.plan === 'premium') return next(); // Liberado
+    // Bloqueio de funcionalidades Premium (Prova, Desafio, Explicação)
+    const isPremiumFeature = ['/prova', '/atividade-extra', '/explicacao'].some(p => req.path.includes(p));
+    if (isPremiumFeature && req.plano !== 'premium') {
+      return res.status(403).json({ 
+        erro: 'recurso_premium', 
+        mensagem: 'As funcionalidades de Prova, Desafio e Explicação são exclusivas para o Plano Premium.' 
+      });
+    }
+
+    if (perfil.plan === 'premium') return next(); // Liberado ilimitado
     
     const usoHoje = await verificarUsoDiario(usuario.id);
     if (usoHoje >= 3) {
@@ -93,6 +102,15 @@ async function checkUsageLimits(req, res, next) {
   // Visitante (Guest)
   if (!sessionId) {
     return res.status(401).json({ erro: 'Autenticação ou Session ID obrigatório.' });
+  }
+
+  // Bloqueio de funcionalidades Premium para Visitantes
+  const isPremiumFeature = ['/prova', '/atividade-extra', '/explicacao'].some(p => req.path.includes(p));
+  if (isPremiumFeature) {
+    return res.status(403).json({ 
+      erro: 'recurso_premium', 
+      mensagem: 'As funcionalidades de Prova, Desafio e Explicação são exclusivas para o Plano Premium.' 
+    });
   }
   
   const usoTotal = await verificarUsoGuest(sessionId);

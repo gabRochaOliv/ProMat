@@ -9,10 +9,10 @@ const { atualizarPlanoPorEmail } = require('../services/supabaseService');
 router.post('/cakto', async (req, res) => {
   try {
     const payload = req.body;
-    
+
     // Log básico para monitoramento (recomendado em produção)
     console.log('\n[Webhook Cakto] Evento recebido!');
-    
+
     // TODO: No futuro, validar header de assinatura criptográfica da Cakto aqui
     // const signature = req.headers['x-cakto-signature'];
     // validarAssinaturaCakto(signature, req.body, process.env.CAKTO_WEBHOOK_SECRET);
@@ -20,7 +20,7 @@ router.post('/cakto', async (req, res) => {
     // 1. Identificar o tipo do evento
     // A Cakto geralmente envia o status no campo `event`, `status` ou `data.status`
     const eventType = payload.event || payload.type || payload.status || payload.data?.status;
-    
+
     // 2. Extrair o Email do Cliente (comprador)
     // Procuramos em vários níveis devido à variação de documentação de gateways
     let email = null;
@@ -40,9 +40,9 @@ router.post('/cakto', async (req, res) => {
     // 3. Atualização no Banco de Dados
     if (isApproved && email) {
       console.log(`[Webhook Cakto] Pagamento confirmado para ${email}. Ativando Premium...`);
-      
+
       const resultado = await atualizarPlanoPorEmail(email, 'premium');
-      
+
       if (resultado.sucesso) {
         console.log(`[Webhook Cakto] ✅ Plano Premium ativado com sucesso para ${email}!`);
       } else {

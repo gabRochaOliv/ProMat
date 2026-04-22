@@ -121,6 +121,53 @@ body {
 }
 .logo i { font-size: 26px; color: var(--brand-600); }
 
+.plan-badge {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+  align-self: center;
+  line-height: 1;
+}
+.plan-badge.free {
+  background: var(--bg-app);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+.plan-badge.premium {
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  border: none;
+}
+
+/* Tag Premium nos Cards */
+.card-premium-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+.action-card.premium-locked {
+  opacity: 0.75;
+}
+.action-card.premium-locked:hover {
+  border-color: var(--brand-200);
+}
+.action-card { position: relative; } /* Garante que a tag fique posicionada corretamente */
+
 .btn-fechar-sidebar {
   display: none; /* visível só no mobile */
   background: transparent;

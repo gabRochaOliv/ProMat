@@ -33,6 +33,7 @@
       <div class="logo" onclick="navegarPara('home'); fecharSidebar()">
         <i class="ph-fill ph-calculator"></i>
         <span>ProMat</span>
+        <span class="plan-badge" id="plan-badge" style="display:none;"></span>
       </div>
       <button class="btn-fechar-sidebar" onclick="fecharSidebar()" title="Fechar menu">
         <i class="ph ph-x"></i>
@@ -119,7 +120,7 @@
       </div>
 
       <div class="hero-header">
-        <h1 class="hero-title">O que vamos criar <span>hoje?</span></h1>
+        <h1 class="hero-title" id="main-greeting">O que vamos criar <span>hoje?</span></h1>
         <p class="hero-subtitle" id="hero-subtitle">Escolha o tipo de material e gere em segundos com IA.</p>
       </div>
 
@@ -136,7 +137,8 @@
           <i class="ph ph-arrow-right card-arrow"></i>
         </div>
 
-        <div class="action-card" onclick="abrirFormulario('prova')">
+        <div class="action-card premium-only" onclick="abrirFormulario('prova')">
+          <span class="card-premium-tag">Premium</span>
           <div class="card-icon" style="background:#eff6ff;color:#2563eb;">
             <i class="ph-fill ph-exam"></i>
           </div>
@@ -147,7 +149,8 @@
           <i class="ph ph-arrow-right card-arrow"></i>
         </div>
 
-        <div class="action-card" onclick="abrirFormulario('atividade-extra')">
+        <div class="action-card premium-only" onclick="abrirFormulario('atividade-extra')">
+          <span class="card-premium-tag">Premium</span>
           <div class="card-icon" style="background:#fffbeb;color:#d97706;">
             <i class="ph-fill ph-lightbulb"></i>
           </div>
@@ -158,7 +161,8 @@
           <i class="ph ph-arrow-right card-arrow"></i>
         </div>
 
-        <div class="action-card" onclick="abrirFormulario('explicacao')">
+        <div class="action-card premium-only" onclick="abrirFormulario('explicacao')">
+          <span class="card-premium-tag">Premium</span>
           <div class="card-icon" style="background:#fef2f2;color:#dc2626;">
             <i class="ph-fill ph-chalkboard-teacher"></i>
           </div>
@@ -489,6 +493,10 @@
     </div>
     <!-- Formulário -->
     <div class="auth-modal-body">
+      <div class="form-group" id="auth-name-group" style="display: none;">
+        <label for="auth-name">Nome Completo</label>
+        <input type="text" id="auth-name" placeholder="Como quer ser chamado?" autocomplete="name">
+      </div>
       <div class="form-group">
         <label for="auth-email">E-mail</label>
         <input type="email" id="auth-email" placeholder="seu@email.com" autocomplete="email">

@@ -219,6 +219,18 @@ function iniciarNovaConversa() {
 }
 
 function abrirFormulario(tipo) {
+  // Bloqueio de funcionalidades Premium para Plano Grátis
+  if (tipo !== 'exercicios') {
+    if (window.Auth && window.Auth.estado.plano !== 'premium') {
+      if (window.mostrarModalUpgrade) {
+        mostrarModalUpgrade('As funcionalidades de Prova, Desafio e Explicação de Tema são exclusivas para assinantes do Plano Premium.');
+      } else {
+        alert('Esta funcionalidade é exclusiva para o Plano Premium.');
+      }
+      return;
+    }
+  }
+
   estado.tipoAtual = tipo;
 
   const formIcon = document.getElementById('form-header-icon');
@@ -1099,7 +1111,7 @@ const HistoryManager = {
 
     // ---- 2. Conversas soltas (Nuvem apenas) ----
     if (soltas.length > 0) {
-      html += `<div class="nav-section"><div class="nav-section-title">Nuvem (Sincronizado)</div>`;
+      html += `<div class="nav-section"><div class="nav-section-title">Recentes</div>`;
       html += soltas.map(i => `
         <div class="historico-item historico-item-deletavel" onclick="HistoryManager.abrirItem('${i.id}', null, true)">
           <div class="historico-item-conteudo">
