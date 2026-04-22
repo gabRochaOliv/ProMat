@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const gerarRoutes = require('./routes/gerar');
+const historicoRoutes = require('./routes/historico');
+const webhookRoutes = require('./routes/webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,8 +43,8 @@ app.use(cors({
     if (allowedPatterns.some(p => p.test(origin))) return callback(null, true);
     callback(new Error('Origem não permitida pelo CORS'));
   },
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
 }));
 
 // ======================================
@@ -70,31 +72,24 @@ app.use(express.static(frontendPath));
 // ROTAS DA API
 // ======================================
 app.use('/api/gerar', gerarRoutes);
+app.use('/api/historico', historicoRoutes);
+app.use('/api/webhook', webhookRoutes);
 
-// Busca histórico do usuário
-app.get('/api/historico', async (req, res) => {
-  const { verificarToken } = require('./services/supabaseService');
-  const { createClient } = require('@supabase/supabase-js');
-  
+// Migração de gerações guest → usuário autenticado (chamada após login)
+app.post('/api/auth/migrar-guest', async (req, res) => {
+  const { verificarToken, migrarGeracoesGuest } = require('./services/supabaseService');
+
   const auth = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  
+  const { sessionId } = req.body;
+
+  if (!sessionId) return res.status(400).json({ erro: 'sessionId obrigatório' });
+
   const usuario = await verificarToken(token);
   if (!usuario) return res.status(401).json({ erro: 'Não autenticado' });
 
-  // Criamos um client com service_role para buscar sem restrições de RLS se necessário,
-  // mas aqui o ideal é usar as chaves do env.
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  
-  const { data, error } = await supabase
-    .from('generations')
-    .select('*')
-    .eq('user_id', usuario.id)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (error) return res.status(500).json({ erro: error.message });
-  res.json(data);
+  const total = await migrarGeracoesGuest(sessionId, usuario.id);
+  res.json({ sucesso: true, migradas: total });
 });
 
 // Health check

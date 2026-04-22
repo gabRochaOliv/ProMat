@@ -89,13 +89,21 @@ async function callOpenAI(prompt, systemPrompt, jsonMode = true) {
 
   if (!jsonMode) return content;
 
+  // Sanitização de LaTeX no JSON:
+  // Se a IA gerou \frac em vez de \\frac, o JSON.parse vai interpretar \f como Form Feed.
+  // A regex abaixo encontra barras invertidas (single backslash) que NÃO sejam:
+  // 1. precedidas por outra barra (já escapadas)
+  // 2. seguidas por n (newline), " (aspas), ou \ (barra)
+  // E as transforma em duplas barras (\\).
+  const safeContent = content.replace(/(?<!\\)\\(?![n"\\])/g, '\\\\');
+
   // Tenta parse normal primeiro
   try {
-    return JSON.parse(content);
+    return JSON.parse(safeContent);
   } catch (parseErr) {
-    console.warn('[OpenAI] JSON truncado detectado. Tentando reparo automático...');
+    console.warn('[OpenAI] JSON truncado ou inválido detectado. Tentando reparo automático...');
     try {
-      const reparado = tentarRepararJSON(content);
+      const reparado = tentarRepararJSON(safeContent);
       const resultado = JSON.parse(reparado);
       console.log('[OpenAI] Reparo de JSON bem-sucedido!');
       return resultado;

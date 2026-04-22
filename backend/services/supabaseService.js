@@ -82,4 +82,134 @@ async function salvarGeracao({ userId, sessionId, type, title, promptData, gener
   }
 }
 
-module.exports = { verificarToken, salvarGeracao };
+/**
+ * Migra gerações guest para um usuário autenticado.
+ * Chamada logo após o login/cadastro quando o visitante tinha um sessionId.
+ *
+ * @param {string} sessionId - ID da sessão guest
+ * @param {string} userId    - ID do usuário recém-autenticado
+ * @returns {Promise<number>} Número de registros migrados
+ */
+async function migrarGeracoesGuest(sessionId, userId) {
+  if (!supabaseAdmin || !sessionId || !userId) return 0;
+
+  // Sanitiza: session_id deve ter prefixo "guest_" para evitar abuse
+  if (!sessionId.startsWith('guest_')) {
+    console.warn('[Supabase] migrarGeracoesGuest: sessionId inválido ignorado:', sessionId);
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('generations')
+      .update({ user_id: userId, session_id: null })
+      .eq('session_id', sessionId)
+      .is('user_id', null) // Só migra itens sem user_id (genuinamente guest)
+      .select('id');
+
+    if (error) {
+      console.error('[Supabase] Erro na migração guest:', error.message);
+      return 0;
+    }
+
+    const total = data?.length || 0;
+    if (total > 0) {
+      console.log(`[Supabase] Migradas ${total} geração(ões) do session ${sessionId} → user ${userId}`);
+    }
+    return total;
+  } catch (err) {
+    console.error('[Supabase] Erro inesperado na migração guest:', err.message);
+    return 0;
+  }
+}
+
+/**
+ * Retorna o perfil do usuário (ex: plan: 'free' ou 'premium')
+ */
+async function obterPerfilUsuario(userId) {
+  if (!supabaseAdmin || !userId) return { plan: 'free' };
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('plan')
+    .eq('id', userId)
+    .single();
+  
+  if (error) console.error('[Supabase] Erro ao buscar perfil:', error.message);
+  return data || { plan: 'free' };
+}
+
+/**
+ * Conta quantas gerações o usuário fez HOJE (desde meia-noite)
+ */
+async function verificarUsoDiario(userId) {
+  if (!supabaseAdmin || !userId) return 0;
+  
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const hojeISO = hoje.toISOString();
+
+  const { count, error } = await supabaseAdmin
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', hojeISO);
+    
+  if (error) console.error('[Supabase] Erro ao contar uso diário:', error.message);
+  return count || 0;
+}
+
+/**
+ * Conta quantas gerações o visitante já fez no total com este sessionId
+ */
+async function verificarUsoGuest(sessionId) {
+  if (!supabaseAdmin || !sessionId) return 0;
+  
+  const { count, error } = await supabaseAdmin
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .eq('session_id', sessionId);
+    
+  if (error) console.error('[Supabase] Erro ao contar uso guest:', error.message);
+  return count || 0;
+}
+
+/**
+ * Atualiza o plano de um usuário baseando-se no e-mail (usado via Webhook Cakto)
+ */
+async function atualizarPlanoPorEmail(email, plano = 'premium') {
+  if (!supabaseAdmin || !email) return { sucesso: false, erro: 'Sem Supabase configurado ou email nulo' };
+  
+  const emailLimpo = email.toLowerCase().trim();
+  
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .update({ plan: plano })
+      .eq('email', emailLimpo)
+      .select('id, email, plan');
+      
+    if (error) {
+      console.error(`[Supabase] Erro ao atualizar plano para ${emailLimpo}:`, error.message);
+      return { sucesso: false, erro: error.message };
+    }
+    
+    if (!data || data.length === 0) {
+      return { sucesso: false, erro: 'Usuário não encontrado com este email' };
+    }
+    
+    return { sucesso: true, perfil: data[0] };
+  } catch (err) {
+    console.error(`[Supabase] Exceção ao atualizar plano para ${emailLimpo}:`, err.message);
+    return { sucesso: false, erro: err.message };
+  }
+}
+
+module.exports = { 
+  verificarToken, 
+  salvarGeracao, 
+  migrarGeracoesGuest, 
+  obterPerfilUsuario, 
+  verificarUsoDiario, 
+  verificarUsoGuest,
+  atualizarPlanoPorEmail
+};

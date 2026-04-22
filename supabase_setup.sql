@@ -87,6 +87,11 @@ create policy "generations: leitura própria"
   on public.generations for select
   using (auth.uid() = user_id);
 
+-- Policy: usuário pode deletar apenas suas próprias gerações
+create policy "generations: exclusão própria"
+  on public.generations for delete
+  using (auth.uid() = user_id);
+
 -- Policy: service_role pode inserir (backend usa service_role, bypassa RLS)
 -- O service_role ignora RLS automaticamente, então não precisa de policy de insert
 

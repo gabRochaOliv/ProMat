@@ -14,6 +14,7 @@
 const AuthState = {
   usuario: null,        // objeto do usuário autenticado
   sessao: null,         // objeto de sessão (contém access_token)
+  plano: 'guest',       // guest | free | premium
   carregando: true,     // true enquanto verifica sessão inicial
 };
 
@@ -37,17 +38,77 @@ async function initAuth() {
   const { data: { session } } = await sb.auth.getSession();
   AuthState.sessao = session;
   AuthState.usuario = session?.user || null;
+  AuthState.plano = session?.user ? 'free' : 'guest';
   AuthState.carregando = false;
+
+  if (AuthState.usuario) {
+    await carregarPerfil(AuthState.usuario.id);
+  }
 
   atualizarUIAuth();
 
   // Listener de mudanças de auth (login, logout, refresh de token)
-  sb.auth.onAuthStateChange((_event, session) => {
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    const eraLogado = !!AuthState.usuario;
     AuthState.sessao = session;
     AuthState.usuario = session?.user || null;
+    AuthState.plano = session?.user ? 'free' : 'guest';
+    
+    if (AuthState.usuario) {
+      await carregarPerfil(AuthState.usuario.id);
+    }
+    
     atualizarUIAuth();
     if (window.HistoryManager) window.HistoryManager.renderizarSidebar();
+
+    // Migração guest → usuário: só na primeira entrada (SIGNED_IN a partir de estado deslogado)
+    if (_event === 'SIGNED_IN' && !eraLogado && session?.user) {
+      _migrarGeracoesGuestAposLogin(session);
+    }
   });
+}
+
+/**
+ * Busca o plano do usuário no Supabase e atualiza o estado
+ */
+async function carregarPerfil(userId) {
+  const sb = window.SupabaseClient.get();
+  if (!sb || !userId) return;
+  const { data, error } = await sb.from('profiles').select('plan').eq('id', userId).single();
+  if (!error && data) {
+    AuthState.plano = data.plan;
+  }
+}
+
+/**
+ * Chama o backend para vincular gerações guest ao usuário recém-autenticado.
+ */
+async function _migrarGeracoesGuestAposLogin(session) {
+  const sessionId = window.GuestMode?.getSessionId?.();
+  if (!sessionId || !sessionId.startsWith('guest_')) return;
+
+  try {
+    const resp = await fetch('/api/auth/migrar-guest', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ sessionId }),
+    });
+
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json.migradas > 0) {
+        console.log(`[Auth] ${json.migradas} geração(ões) guest migradas para sua conta.`);
+        if (window.mostrarToast) mostrarToast(`${json.migradas} conteúdo(s) guest foram salvos na sua conta!`, 'sucesso');
+      }
+      // Limpa sessão guest após migração bem-sucedida
+      if (window.GuestMode) window.GuestMode.limparSessao();
+    }
+  } catch (err) {
+    console.warn('[Auth] Migração guest falhou silenciosamente:', err.message);
+  }
 }
 
 // ============================================================
@@ -174,6 +235,22 @@ async function submitAuth() {
 
 async function handleLogout() {
   await authLogout();
+  
+  // Limpeza profunda de estado para evitar vazamento visual para o modo Guest
+  if (window.HistoryManager) {
+    window.HistoryManager._cacheCloud = [];
+  }
+  if (typeof estado !== 'undefined') {
+    estado.dadosAtuais = null;
+    estado.tipoAtual = null;
+    estado.pastaAtivaId = null;
+  }
+  
+  // Força o retorno para a tela inicial (limpa a visualização)
+  if (window.navegarPara) {
+    window.navegarPara('home');
+  }
+  
   mostrarToast('Você saiu do ProMat.', 'info');
 }
 

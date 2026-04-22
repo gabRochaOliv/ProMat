@@ -11,7 +11,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     MathJax = {
-      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
+      tex: { 
+        inlineMath: [['\\(', '\\)']], 
+        displayMath: [['\\[', '\\]']] 
+      },
       svg: { fontCache: 'global' }
     };
   </script>
@@ -42,9 +45,9 @@
         <i class="ph ph-plus-circle"></i>
         Nova conversa
       </button>
-      <button class="btn-sidebar-action secondary" onclick="abrirModalNovaPasta()">
-        <i class="ph ph-folder-plus"></i>
-        Nova pasta / aula
+      <button class="btn-sidebar-action secondary" onclick="navegarPara('historico')">
+        <i class="ph ph-clock-counter-clockwise"></i>
+        Histórico
       </button>
     </div>
 
@@ -304,6 +307,73 @@
       </div>
     </section>
 
+    <!-- ==================== VIEW: HISTÓRICO ==================== -->
+    <section id="view-historico" class="view-section">
+      <div class="hist-page-header">
+        <div class="hist-page-title-row">
+          <button class="btn-voltar" onclick="navegarPara('home')">
+            <i class="ph ph-caret-left"></i> Início
+          </button>
+          <div>
+            <h2 class="hist-page-title"><i class="ph-fill ph-clock-counter-clockwise"></i> Histórico</h2>
+            <p class="hist-page-subtitle">Conteúdos gerados com IA, salvos na nuvem.</p>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="hist-filtros" id="hist-filtros">
+          <button class="hist-filtro-btn ativo" data-tipo="" onclick="filtrarHistorico(this)">Todos</button>
+          <button class="hist-filtro-btn" data-tipo="exercicios" onclick="filtrarHistorico(this)">
+            <i class="ph ph-list-numbers"></i> Listas
+          </button>
+          <button class="hist-filtro-btn" data-tipo="prova" onclick="filtrarHistorico(this)">
+            <i class="ph ph-exam"></i> Provas
+          </button>
+          <button class="hist-filtro-btn" data-tipo="atividade-extra" onclick="filtrarHistorico(this)">
+            <i class="ph ph-lightbulb"></i> Extras
+          </button>
+          <button class="hist-filtro-btn" data-tipo="explicacao" onclick="filtrarHistorico(this)">
+            <i class="ph ph-chalkboard-teacher"></i> Explicações
+          </button>
+        </div>
+      </div>
+
+      <!-- Estado: não logado -->
+      <div class="hist-estado" id="hist-estado-nao-logado" style="display:none;">
+        <div class="hist-estado-icon">🔐</div>
+        <h3>Faça login para ver seu histórico</h3>
+        <p>Seus conteúdos gerados ficam salvos na nuvem e acessíveis de qualquer lugar.</p>
+        <button class="btn btn-primary" onclick="Auth.abrirModal()">Entrar na conta</button>
+      </div>
+
+      <!-- Estado: carregando -->
+      <div class="hist-estado" id="hist-estado-loading" style="display:none;">
+        <div class="hist-spinner"></div>
+        <p>Carregando histórico...</p>
+      </div>
+
+      <!-- Estado: vazio -->
+      <div class="hist-estado" id="hist-estado-vazio" style="display:none;">
+        <div class="hist-estado-icon">📭</div>
+        <h3>Nenhum conteúdo gerado ainda</h3>
+        <p>Comece criando uma lista de exercícios, prova ou desafio.</p>
+        <button class="btn btn-primary" onclick="navegarPara('home')">Criar conteúdo</button>
+      </div>
+
+      <!-- Estado: erro -->
+      <div class="hist-estado" id="hist-estado-erro" style="display:none;">
+        <div class="hist-estado-icon">⚠️</div>
+        <h3>Erro ao carregar histórico</h3>
+        <p id="hist-erro-msg">Verifique sua conexão e tente novamente.</p>
+        <button class="btn btn-outline-soft" onclick="carregarHistorico()">Tentar novamente</button>
+      </div>
+
+      <!-- Lista de itens -->
+      <div class="hist-lista" id="hist-lista">
+        <!-- Preenchido via JS -->
+      </div>
+    </section>
+
   </div><!-- /main-content -->
 </div><!-- /layout-wrapper -->
 
@@ -377,6 +447,31 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: UPGRADE PREMIUM ===================== -->
+<div class="overlay" id="modal-upgrade-overlay">
+  <div class="modal" style="max-width: 440px; text-align: center; padding: 32px 24px;">
+    <div class="modal-header" style="justify-content: flex-end; padding: 0; border: none; margin-bottom: -20px;">
+      <button class="btn-icon" onclick="document.getElementById('modal-upgrade-overlay').classList.remove('ativo')"><i class="ph ph-x"></i></button>
+    </div>
+    <div style="font-size: 48px; color: var(--primary); margin-bottom: 16px;">
+      <i class="ph-fill ph-crown"></i>
+    </div>
+    <h2 style="font-size: 22px; margin-bottom: 12px; color: var(--text-main);">Atualize para o Premium</h2>
+    <p id="upgrade-mensagem" style="font-size: 15px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
+      Você atingiu seu limite gratuito. Desbloqueie gerações ilimitadas e ferramentas profissionais.
+    </p>
+    <ul style="text-align: left; margin: 0 auto 24px auto; max-width: 320px; list-style: none; padding: 0; color: var(--text-main); font-size: 14px; line-height: 1.8;">
+      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Gerações de exercícios ilimitadas</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Impressão e PDF profissional</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Acesso total a gabaritos completos</li>
+      <li><i class="ph-fill ph-check-circle" style="color: var(--primary); margin-right: 8px;"></i> Organização infinita em pastas</li>
+    </ul>
+    <button class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 12px;" onclick="iniciarCheckoutPremium()">
+      <i class="ph-fill ph-rocket-launch"></i> Quero ser Premium
+    </button>
+  </div>
+</div>
+
 <!-- ===================== TOASTS ===================== -->
 <div class="toast-system" id="toast-container"></div>
 
@@ -414,6 +509,8 @@
 <script src="js/printer.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/guest.js"></script>
+<script src="js/historico.js"></script>
 <script src="js/app.js"></script>
 
 </body>

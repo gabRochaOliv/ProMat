@@ -56,6 +56,11 @@ function navegarPara(viewId) {
     atualizarUIContexto();
   }
 
+  // Carrega histórico automaticamente ao acessar a view
+  if (viewId === 'historico' && window.carregarHistorico) {
+    carregarHistorico();
+  }
+
   fecharSidebar(); // fecha drawer no mobile ao navegar
 }
 
@@ -127,6 +132,12 @@ function atualizarUIContexto() {
 // ============================================================
 function abrirModalNovaPasta() {
   fecharSidebar();
+  
+  if (window.Auth && window.Auth.estado.plano !== 'premium') {
+    mostrarModalUpgrade('Organizar gerações em Pastas ilimitadas é um benefício exclusivo do plano Premium.');
+    return;
+  }
+
   const overlay = document.getElementById('modal-nova-pasta-overlay');
   const input = document.getElementById('input-nome-pasta');
   const sugsEl = document.getElementById('sugestoes-nome-pasta');
@@ -252,6 +263,8 @@ function renderizarDestinoForm() {
   const container = document.getElementById('form-destino-container');
   if (!container) return;
 
+  const usuario = window.Auth?.estado?.usuario;
+
   if (estado.pastaAtivaId) {
     const aulas = HistoryManager.obterAulas();
     const pasta = aulas.find(a => a.id === estado.pastaAtivaId);
@@ -270,6 +283,7 @@ function renderizarDestinoForm() {
         </button>
       </div>`;
   } else {
+    // Se for guest, não mostra opção de criar pasta para evitar confusão de persistência local
     container.innerHTML = `
       <div class="form-destino-strip">
         <div class="destino-info">
@@ -279,9 +293,11 @@ function renderizarDestinoForm() {
             <div class="destino-nome">Não será salva em pasta</div>
           </div>
         </div>
+        ${usuario ? `
         <button type="button" class="btn-trocar-destino" onclick="abrirModalNovaPasta()">
           <i class="ph ph-folder-plus"></i> Criar pasta
         </button>
+        ` : ''}
       </div>`;
   }
 }
@@ -340,6 +356,16 @@ async function submeterFormulario() {
 
   if (!tema) { mostrarToast('Informe o tema ou assunto.', 'aviso'); return; }
 
+  // ── VERIFICAÇÃO GUEST MODE ──────────────────────────────────
+  if (window.GuestMode) {
+    const check = window.GuestMode.verificarLimite();
+    if (!check.podeGerar) {
+      window.GuestMode.mostrarBloqueio();
+      return; // bloqueia antes de qualquer chamada
+    }
+  }
+  // ────────────────────────────────────────────────────────────
+
   const params = { serie, tema, nivel, quantidade };
   if (tipo === 'prova') {
     params.totalQuestoes = quantidade;
@@ -365,18 +391,37 @@ async function submeterFormulario() {
     estado.dadosAtuais = res.dados;
     estado.tipoAtual = tipo;
 
-    // Salva no histórico (com ou sem pasta de contexto)
-    HistoryManager.adicionar({
-      tipo,
-      tema,
-      serie,
-      dados: res.dados,
-      pastaId: estado.pastaAtivaId || null, // null = conversa solta
-    });
+    // ── REGISTRAR GERAÇÃO GUEST ─────────────────────────────
+    if (window.GuestMode) window.GuestMode.registrarGeracao();
+    // ────────────────────────────────────────────────────────
+
+    // Salva no histórico local APENAS se houver pasta ativa (pastas ainda são locais).
+    // Se for conversa solta (sem pasta), a persistência agora é só no backend via API,
+    // garantindo que não vaze histórico falso para Guests e que o Authenticated use a nuvem.
+    if (estado.pastaAtivaId) {
+      HistoryManager.adicionar({
+        tipo,
+        tema,
+        serie,
+        dados: res.dados,
+        pastaId: estado.pastaAtivaId,
+      });
+    } else {
+      // Se estiver logado, pede para a sidebar recarregar da nuvem para exibir o novo item
+      if (window.Auth?.estado?.usuario) {
+        HistoryManager.renderizarSidebar();
+      }
+    }
 
     renderizarResultado(res.dados, tipo);
     navegarPara('result');
     mostrarToast(estado.pastaAtivaId ? 'Salvo na pasta com sucesso!' : 'Conteúdo gerado!', 'sucesso');
+
+    // ── BANNER PÓS-GERAÇÃO PARA VISITANTE ───────────────────
+    setTimeout(() => {
+      if (window.GuestMode) window.GuestMode.mostrarBannerSalvar();
+    }, 600); // aguarda a view renderizar
+    // ────────────────────────────────────────────────────────
 
   } catch (e) {
     mostrarToast(e.message, 'erro');
@@ -468,7 +513,7 @@ function renderizarResultado(dados, tipo, pastaId) {
       // Garante quebra de linha antes de itens romanos (I, II, III...) mesmo se colados em dois-pontos ou pontos
       textoEnunciado = textoEnunciado.replace(/([:.\s])\s*([IVX]+\.)/g, '$1\n$2');
       
-      enunciadoEl.innerHTML = limparLaTeX(textoEnunciado).replace(/\n/g, '<br>');
+      enunciadoEl.innerHTML = MathRenderer.prepararTexto(textoEnunciado).replace(/\n/g, '<br>');
       textoEl.appendChild(enunciadoEl);
 
       // Opções (se for múltipla escolha)
@@ -487,7 +532,7 @@ function renderizarResultado(dados, tipo, pastaId) {
           
           const labelEl = document.createElement('span');
           labelEl.className = 'opcao-texto';
-          labelEl.textContent = limparLaTeX(opt);
+          labelEl.textContent = MathRenderer.prepararTexto(opt);
           
           optEl.appendChild(letraEl);
           optEl.appendChild(labelEl);
@@ -531,8 +576,8 @@ function renderizarResultado(dados, tipo, pastaId) {
       const respEl = document.createElement('span');
       respEl.className = 'gab-resp';
       respEl.textContent = g.alternativa_correta
-        ? `Alt. ${g.alternativa_correta} — ${limparLaTeX(g.resposta || '')}`
-        : limparLaTeX(g.resposta || '');
+        ? `Alt. ${g.alternativa_correta} — ${MathRenderer.prepararTexto(g.resposta || '')}`
+        : MathRenderer.prepararTexto(g.resposta || '');
 
       itemEl.appendChild(numEl);
       itemEl.appendChild(respEl);
@@ -578,7 +623,7 @@ function renderizarExplicacaoDOM(dados, container) {
   const textoEl = document.createElement('div');
   textoEl.style.cssText = 'font-size:16px; margin-bottom:28px; line-height:1.8; color:var(--text-main);';
   // Suporte a quebras de linha no texto da explicação
-  textoEl.innerHTML = limparLaTeX(dados.explicacao || '').replace(/\n/g, '<br>');
+  textoEl.innerHTML = MathRenderer.prepararTexto(dados.explicacao || '').replace(/\n/g, '<br>');
   container.appendChild(textoEl);
 
   // Exemplos
@@ -599,7 +644,7 @@ function renderizarExplicacaoDOM(dados, container) {
 
       const desc = document.createElement('div');
       desc.style.cssText = 'font-size:14px; line-height:1.6; color:var(--text-main);';
-      desc.innerHTML = limparLaTeX(e.descricao || '').replace(/\n/g, '<br>');
+      desc.innerHTML = MathRenderer.prepararTexto(e.descricao || '').replace(/\n/g, '<br>');
       card.appendChild(desc);
       container.appendChild(card);
     });
@@ -696,7 +741,7 @@ function renderizarDesafioDOM(dados, container) {
   if (dados.contexto) {
     const ctxEl = document.createElement('p');
     ctxEl.style.cssText = 'color:rgba(255,255,255,0.9); font-size:15px; line-height:1.6; margin:0;';
-    ctxEl.innerHTML = limparLaTeX(dados.contexto).replace(/\n/g, '<br>');
+    ctxEl.innerHTML = MathRenderer.prepararTexto(dados.contexto).replace(/\n/g, '<br>');
     banner.appendChild(ctxEl);
   }
 
@@ -741,7 +786,7 @@ function renderizarDesafioDOM(dados, container) {
 
     let textoEnunciado = etapa.enunciado || '';
     textoEnunciado = textoEnunciado.replace(/([:.\s])\s*([IVX]+\.)/g, '$1\n$2');
-    enunciadoEl.innerHTML = limparLaTeX(textoEnunciado).replace(/\n/g, '<br>');
+    enunciadoEl.innerHTML = MathRenderer.prepararTexto(textoEnunciado).replace(/\n/g, '<br>');
     card.appendChild(enunciadoEl);
 
     container.appendChild(card);
@@ -756,6 +801,11 @@ function toggleGabarito() {
 // MODAL DE GABARITO COMPLETO
 // ============================================================
 function abrirModalGabarito() {
+  if (window.Auth && window.Auth.estado.plano !== 'premium') {
+    mostrarModalUpgrade('O acesso à resolução passo a passo de todas as questões é uma funcionalidade exclusiva do Premium.');
+    return;
+  }
+
   const overlay = document.getElementById('gabarito-modal-overlay');
   const lista = document.getElementById('gabarito-modal-lista');
   const gabarito = estado.gabaritoAtual || [];
@@ -789,7 +839,7 @@ function abrirModalGabarito() {
       if (g.resposta) {
         const resp = document.createElement('p');
         resp.className = 'gab-card-resp';
-        resp.innerHTML = limparLaTeX(g.resposta).replace(/\n/g, '<br>');
+        resp.innerHTML = MathRenderer.prepararTexto(g.resposta).replace(/\n/g, '<br>');
         card.appendChild(resp);
       }
 
@@ -808,7 +858,7 @@ function abrirModalGabarito() {
           textoFinal = textoFinal.replace(/(Passo\s+\d+[:\s])/g, '\n$1').trim();
         }
         // Usa innerHTML com <br> para respeitar as quebras de linha
-        resolEl.innerHTML = limparLaTeX(textoFinal).replace(/\n/g, '<br>');
+        resolEl.innerHTML = MathRenderer.prepararTexto(textoFinal).replace(/\n/g, '<br>');
         card.appendChild(resolEl);
       }
 
@@ -916,19 +966,21 @@ const HistoryManager = {
     let item = null;
 
     if (isCloud) {
-      // Busca no cache temporário criado durante a renderização da sidebar
-      item = (this._cacheCloud || []).find(i => i.id === itemId);
-    } else {
-      const dados = this._dados();
-      if (pastaId) {
-        const pasta = dados.pastas.find(p => p.id === pastaId);
-        item = pasta?.itens.find(i => i.id === itemId);
-      } else {
-        item = dados.conversas_soltas.find(i => i.id === itemId);
+      // Se for item da nuvem e a função global de abrir histórico existir, usa ela
+      // pois ela já faz o fetch dos dados completos (generated_content) que não vêm na listagem leve.
+      if (window.abrirItemHistorico) {
+        window.abrirItemHistorico(itemId);
+        return;
       }
+      item = (this._cacheCloud || []).find(i => i.id === itemId);
+    } else if (pastaId) {
+      // Pastas continuam locais
+      const dados = this._dados();
+      const pasta = dados.pastas.find(p => p.id === pastaId);
+      item = pasta?.itens.find(i => i.id === itemId);
     }
 
-    if (!item) return;
+    if (!item || !item.dados) return;
 
     estado.dadosAtuais = item.dados;
     estado.tipoAtual = item.tipo;
@@ -953,36 +1005,49 @@ const HistoryManager = {
     if (!nav) return;
 
     const labels = { exercicios: 'Lista', prova: 'Prova', 'atividade-extra': 'Extra', explicacao: 'Explicação' };
-    const dadosLocais = this._dados();
-    
-    // Decisão: Usar histórico da nuvem se estiver logado, caso contrário usa local
     const usuario = window.Auth?.estado?.usuario;
+
+    // Se for GUEST (não logado), mostra apenas um aviso e bloqueia visualização local.
+    if (!usuario) {
+      nav.innerHTML = `
+        <div class="estado-vazio" style="padding:20px; text-align:center;">
+          <i class="ph ph-lock-key" style="font-size:32px; color:var(--text-muted); margin-bottom:12px; display:block;"></i>
+          <p style="color:var(--text-main); font-weight:600; font-size:14px; margin-bottom:8px;">Histórico Bloqueado</p>
+          <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">
+            Visitantes podem gerar 1 conteúdo gratuito. Crie uma conta para liberar o histórico ilimitado.
+          </p>
+          <button class="btn btn-primary" style="width:100%; padding:8px;" onclick="if(window.abrirCadastroGuest) abrirCadastroGuest()">
+            Criar conta grátis
+          </button>
+        </div>`;
+      return;
+    }
+
+    // Se for AUTHENTICATED (logado), busca da nuvem as conversas soltas
+    const dadosLocais = this._dados();
     let soltas = [];
     let isCloud = false;
 
-    if (usuario) {
-      try {
-        const cloudData = await obterHistoricoCloud();
-        soltas = cloudData.map(c => ({
-          id: c.id,
-          tema: c.title,
-          tipo: c.type,
-          data: c.created_at,
-          dados: c.generated_content,
-          isCloud: true
-        }));
-        this._cacheCloud = soltas;
-        isCloud = true;
-      } catch (e) {
-        soltas = dadosLocais.conversas_soltas;
-      }
-    } else {
-      soltas = dadosLocais.conversas_soltas;
+    try {
+      const cloudData = await obterHistoricoCloud();
+      soltas = cloudData.map(c => ({
+        id: c.id,
+        tema: c.title,
+        tipo: c.type,
+        data: c.created_at,
+        dados: c.generated_content,
+        isCloud: true
+      }));
+      this._cacheCloud = soltas;
+      isCloud = true;
+    } catch (e) {
+      // Se falhar a nuvem, mantemos vazio (sem misturar com local antigo)
+      console.warn('Erro ao buscar histórico da nuvem:', e.message);
     }
 
     let html = '';
 
-    // ---- 1. Pastas (Sempre Locais nesta etapa) ----
+    // ---- 1. Pastas (Sempre Locais nesta etapa - visíveis apenas para auth) ----
     if (dadosLocais.pastas.length > 0) {
       html += `<div class="nav-section"><div class="nav-section-title">Minhas Pastas (Local)</div>`;
       html += dadosLocais.pastas.map(pasta => {
@@ -1032,11 +1097,11 @@ const HistoryManager = {
       html += '</div>';
     }
 
-    // ---- 2. Conversas soltas recentes ----
+    // ---- 2. Conversas soltas (Nuvem apenas) ----
     if (soltas.length > 0) {
-      html += `<div class="nav-section"><div class="nav-section-title">${isCloud ? 'Nuvem (Sincronizado)' : 'Recentes (Local)'}</div>`;
+      html += `<div class="nav-section"><div class="nav-section-title">Nuvem (Sincronizado)</div>`;
       html += soltas.map(i => `
-        <div class="historico-item historico-item-deletavel" onclick="HistoryManager.abrirItem('${i.id}', null, ${i.isCloud || false})">
+        <div class="historico-item historico-item-deletavel" onclick="HistoryManager.abrirItem('${i.id}', null, true)">
           <div class="historico-item-conteudo">
             <div class="historico-titulo">${escaparHtml(i.tema)}</div>
             <div class="historico-meta">
@@ -1044,18 +1109,15 @@ const HistoryManager = {
               ${new Date(i.data).toLocaleDateString('pt-BR')}
             </div>
           </div>
-          ${!i.isCloud ? `
-          <button class="btn-excluir-conversa" title="Excluir" onclick="event.stopPropagation(); HistoryManager.excluirConversa('${i.id}', null)">
-            <i class="ph ph-trash"></i>
-          </button>
-          ` : ''}
+          <!-- O botão de excluir conversa solta na nuvem precisa de lógica via API se quisermos implementar aqui, ou fica só visual por enquanto.
+               O delete da nuvem já está na tela viewHistorico. Aqui na sidebar é só atalho de leitura. -->
         </div>
       `).join('');
       html += `</div>`;
     }
 
     // Estado completamente vazio
-    if (soltas.length === 0 && dados.pastas.length === 0) {
+    if (soltas.length === 0 && dadosLocais.pastas.length === 0) {
       html = `
         <div class="estado-vazio">
           <i class="ph ph-chat-circle-dots"></i>
@@ -1065,6 +1127,7 @@ const HistoryManager = {
 
     nav.innerHTML = html;
   },
+
 };
 
 // Toggle de pasta (expande/colapsa sem entrar no contexto)
@@ -1124,16 +1187,39 @@ function escaparHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-/**
- * Converte delimitadores de LaTeX $...$ para \(...\) caso a IA erre
- */
-function limparLaTeX(texto) {
-  if (!texto) return '';
-  // Substitui pares de $ por \( e \)
-  // Regex simples que assume que $ sempre vem em pares para fórmulas
-  let count = 0;
-  return texto.replace(/\$/g, () => {
-    count++;
-    return count % 2 === 1 ? '\\(' : '\\)';
-  });
-}
+const MathRenderer = {
+  prepararTexto: (texto) => {
+    if (!texto) return '';
+    let limpo = String(texto);
+    
+    // 1. Reduzir escapes duplos gerados pela IA (\\\\ -> \\)
+    limpo = limpo.replace(/\\\\/g, '\\');
+    
+    // 2. Fallback: Converter blocos antigos $$ ... $$ para \\[ ... \\]
+    limpo = limpo.replace(/\$\$(.*?)\$\$/gs, '\\[$1\\]');
+    
+    // 3. Fallback: Converter inline antigo $ ... $ para \\( ... \\)
+    // Previne match com dinheiro (R$) garantindo espaço ou início da linha
+    limpo = limpo.replace(/(^|\s)\$([^$\n]+?)\$(?=\s|[.,!?]|$)/g, '$1\\($2\\)');
+
+    return limpo;
+  }
+};
+
+// ============================================================
+// MODAL UPGRADE PREMIUM
+// ============================================================
+window.mostrarModalUpgrade = function(mensagem) {
+  const overlay = document.getElementById('modal-upgrade-overlay');
+  const msgEl = document.getElementById('upgrade-mensagem');
+  if (overlay && msgEl) {
+    msgEl.textContent = mensagem || 'Você atingiu seu limite gratuito. Desbloqueie gerações ilimitadas e ferramentas profissionais.';
+    overlay.classList.add('ativo');
+  }
+};
+
+window.iniciarCheckoutPremium = function() {
+  // Lógica futura de integração do Checkout (ex: redirecionamento Stripe/Cakto)
+  mostrarToast('Integração de checkout em breve!', 'info');
+  // document.getElementById('modal-upgrade-overlay').classList.remove('ativo');
+};

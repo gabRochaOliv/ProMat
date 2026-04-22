@@ -25,6 +25,15 @@ function gerarHtmlImpressao(dados, incluirGabarito = false) {
  * Abre o modal de configuração de impressão
  */
 function abrirModalImpressao(dados, tipo) {
+  if (window.Auth && window.Auth.estado.plano !== 'premium') {
+    if (window.mostrarModalUpgrade) {
+      window.mostrarModalUpgrade('A exportação para PDF profissional com gabarito é exclusiva para assinantes Premium.');
+    } else {
+      alert('Recurso exclusivo Premium');
+    }
+    return;
+  }
+
   const overlay = document.getElementById('impressao-overlay');
   const preview = document.getElementById('impressao-preview-content');
   const checkGabarito = document.getElementById('incluir-gabarito-check');

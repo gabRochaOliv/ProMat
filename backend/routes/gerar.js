@@ -13,7 +13,13 @@ const {
   buildExplicacaoPrompt,
 } = require('../services/promptBuilder');
 const { validarTema } = require('../services/moderationService');
-const { verificarToken, salvarGeracao } = require('../services/supabaseService');
+const { 
+  verificarToken, 
+  salvarGeracao,
+  obterPerfilUsuario,
+  verificarUsoDiario,
+  verificarUsoGuest
+} = require('../services/supabaseService');
 
 const MAX_EXERCISES = parseInt(process.env.MAX_EXERCISES) || 20;
 
@@ -22,6 +28,11 @@ function extractToken(req) {
   const auth = req.headers['authorization'] || '';
   if (auth.startsWith('Bearer ')) return auth.slice(7);
   return null;
+}
+
+// Helper: extrai sessionId do header X-Session-Id
+function extractSessionId(req) {
+  return req.headers['x-session-id'] || null;
 }
 
 // ======================================
@@ -42,11 +53,67 @@ function sanitizeText(text) {
   return text.trim().substring(0, 200);
 }
 
+function sanitizeText(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text.trim().substring(0, 200);
+}
+
+// ======================================
+// MIDDLEWARE DE LIMITES (GUEST, FREE, PREMIUM)
+// ======================================
+async function checkUsageLimits(req, res, next) {
+  const token = extractToken(req);
+  const sessionId = extractSessionId(req);
+  
+  // Usuário Logado
+  if (token) {
+    const usuario = await verificarToken(token);
+    if (!usuario) {
+      return res.status(401).json({ erro: 'Token inválido ou expirado.' });
+    }
+    
+    req.usuario = usuario;
+    const perfil = await obterPerfilUsuario(usuario.id);
+    req.plano = perfil.plan;
+    
+    if (perfil.plan === 'premium') return next(); // Liberado
+    
+    const usoHoje = await verificarUsoDiario(usuario.id);
+    if (usoHoje >= 3) {
+      return res.status(403).json({ 
+        erro: 'limite_excedido', 
+        plano: 'free', 
+        limite: 3,
+        mensagem: 'Você atingiu o limite de 3 gerações por dia no plano Free.'
+      });
+    }
+    return next();
+  }
+  
+  // Visitante (Guest)
+  if (!sessionId) {
+    return res.status(401).json({ erro: 'Autenticação ou Session ID obrigatório.' });
+  }
+  
+  const usoTotal = await verificarUsoGuest(sessionId);
+  if (usoTotal >= 1) {
+    return res.status(403).json({
+      erro: 'limite_excedido',
+      plano: 'guest',
+      limite: 1,
+      mensagem: 'Visitantes podem gerar apenas 1 conteúdo. Crie sua conta gratuita para continuar!'
+    });
+  }
+  
+  req.plano = 'guest';
+  return next();
+}
+
 // ======================================
 // POST /api/gerar/exercicios
 // Gera lista de exercícios
 // ======================================
-router.post('/exercicios', async (req, res) => {
+router.post('/exercicios', checkUsageLimits, async (req, res) => {
   try {
     const { serie, tema, nivel, quantidade } = req.body;
 
@@ -92,18 +159,16 @@ router.post('/exercicios', async (req, res) => {
 
     const resultado = await callAI(prompt);
 
-    // Salva geração no banco (não-bloqueante — não falha se DB estiver fora)
-    const token = extractToken(req);
-    verificarToken(token).then(usuario => {
-      salvarGeracao({
-        userId: usuario?.id || null,
-        sessionId: null,
-        type: 'exercicios',
-        title: temaClean,
-        promptData: { serie, tema: temaClean, nivel, quantidade: qtd },
-        generatedContent: resultado,
-      });
-    }).catch(() => {});
+    // Salva geração no banco (não-bloqueante)
+    const sessionId = extractSessionId(req);
+    salvarGeracao({
+      userId: req.usuario ? req.usuario.id : null,
+      sessionId: req.usuario ? null : sessionId,
+      type: 'exercicios',
+      title: temaClean,
+      promptData: { serie, tema: temaClean, nivel, quantidade: qtd },
+      generatedContent: resultado,
+    });
 
     return res.json({
       sucesso: true,
@@ -123,7 +188,7 @@ router.post('/exercicios', async (req, res) => {
 // POST /api/gerar/prova
 // Gera prova completa
 // ======================================
-router.post('/prova', async (req, res) => {
+router.post('/prova', checkUsageLimits, async (req, res) => {
   try {
     const { serie, tema, totalQuestoes, tipoQuestoes, nivel } = req.body;
 
@@ -162,17 +227,15 @@ router.post('/prova', async (req, res) => {
     const resultado = await callAI(prompt);
 
     // Salva geração no banco (não-bloqueante)
-    const token = extractToken(req);
-    verificarToken(token).then(usuario => {
-      salvarGeracao({
-        userId: usuario?.id || null,
-        sessionId: null,
-        type: 'prova',
-        title: temaClean,
-        promptData: { serie, tema: temaClean, totalQuestoes: qtdLimitada, tipoQuestoes, nivel },
-        generatedContent: resultado,
-      });
-    }).catch(() => {});
+    const sessionId = extractSessionId(req);
+    salvarGeracao({
+      userId: req.usuario ? req.usuario.id : null,
+      sessionId: req.usuario ? null : sessionId,
+      type: 'prova',
+      title: temaClean,
+      promptData: { serie, tema: temaClean, totalQuestoes: qtdLimitada, tipoQuestoes, nivel },
+      generatedContent: resultado,
+    });
 
     return res.json({
       sucesso: true,
@@ -192,7 +255,7 @@ router.post('/prova', async (req, res) => {
 // POST /api/gerar/atividade-extra
 // Gera atividade extra ou desafio
 // ======================================
-router.post('/atividade-extra', async (req, res) => {
+router.post('/atividade-extra', checkUsageLimits, async (req, res) => {
   try {
     const { serie, tema, tipo, nivel } = req.body;
 
@@ -223,17 +286,15 @@ router.post('/atividade-extra', async (req, res) => {
     const resultado = await callAI(prompt);
 
     // Salva geração no banco (não-bloqueante)
-    const token = extractToken(req);
-    verificarToken(token).then(usuario => {
-      salvarGeracao({
-        userId: usuario?.id || null,
-        sessionId: null,
-        type: 'atividade-extra',
-        title: temaClean,
-        promptData: { serie, tema: temaClean, tipo: tipoValido, nivel },
-        generatedContent: resultado,
-      });
-    }).catch(() => {});
+    const sessionId = extractSessionId(req);
+    salvarGeracao({
+      userId: req.usuario ? req.usuario.id : null,
+      sessionId: req.usuario ? null : sessionId,
+      type: 'atividade-extra',
+      title: temaClean,
+      promptData: { serie, tema: temaClean, tipo: tipoValido, nivel },
+      generatedContent: resultado,
+    });
 
     return res.json({
       sucesso: true,
@@ -253,7 +314,7 @@ router.post('/atividade-extra', async (req, res) => {
 // POST /api/gerar/explicacao
 // Gera explicação simples do tema
 // ======================================
-router.post('/explicacao', async (req, res) => {
+router.post('/explicacao', checkUsageLimits, async (req, res) => {
   try {
     const { serie, tema } = req.body;
 
@@ -278,17 +339,15 @@ router.post('/explicacao', async (req, res) => {
     const resultado = await callAI(prompt);
 
     // Salva geração no banco (não-bloqueante)
-    const token = extractToken(req);
-    verificarToken(token).then(usuario => {
-      salvarGeracao({
-        userId: usuario?.id || null,
-        sessionId: null,
-        type: 'explicacao',
-        title: temaClean,
-        promptData: { serie, tema: temaClean },
-        generatedContent: resultado,
-      });
-    }).catch(() => {});
+    const sessionId = extractSessionId(req);
+    salvarGeracao({
+      userId: req.usuario ? req.usuario.id : null,
+      sessionId: req.usuario ? null : sessionId,
+      type: 'explicacao',
+      title: temaClean,
+      promptData: { serie, tema: temaClean },
+      generatedContent: resultado,
+    });
 
     return res.json({
       sucesso: true,

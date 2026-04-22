@@ -24,13 +24,25 @@ const NIVEL_INSTRUCOES = {
 
 const REGRAS_MATEMATICAS = `
 REGRAS DE FORMATAÇÃO MATEMÁTICA (MUITO IMPORTANTE):
-- Use LaTeX para frações, potências, raízes, equações, variáveis algébricas e expressões complexas.
-- Para expressões no meio do texto (inline), use a notação: \\( expressao \\). Exemplo: "A variável \\( x \\) vale \\( 10 \\)".
-- Para cálculos destacados ou equações completas (blocos isolados), use a notação dupla: $$ expressao $$
-- SÍMBOLO DE MOEDA: Nunca coloque o "R$" dentro do bloco LaTeX. Escreva sempre fora: R$ \\( 25,50 \\) ou simplesmente R$ 25,50.
-- SEPARADOR DECIMAL: No Brasil usamos vírgula. No LaTeX, use chaves para a vírgula não criar espaço extra: \\( 3{,}5 \\) em vez de \\( 3,5 \\).
-- Se for OBRIGATÓRIO usar "$" dentro de um bloco LaTeX, você deve escapá-lo: \\$
+- NUNCA use cifrões ($ ou $$) para delimitar matemática. Eles estão estritamente proibidos.
+- Para expressões no meio do texto (inline), use EXCLUSIVAMENTE a notação: \\( expressao \\). Exemplo: "A variável \\( x \\) vale \\( 10 \\)".
+- Para cálculos destacados ou equações completas (blocos isolados), use EXCLUSIVAMENTE a notação: \\[ expressao \\]
+- SÍMBOLO DE MOEDA: Escreva sempre fora do bloco LaTeX: R$ \\( 25,50 \\) ou simplesmente R$ 25,50.
+- SEPARADOR DECIMAL: No Brasil usamos vírgula. No LaTeX, use chaves para a vírgula não criar espaço extra: \\( 3{,}5 \\).
 - Escreva a matemática com clareza, fechando sempre todas as chaves { } e parênteses.
+
+EXEMPLOS OBRIGATÓRIOS DE LATEX:
+- Frações: \\frac{a}{b}
+- Limites: \\lim_{x \\to 0} f(x)
+- Potências/Índices: x^2 ou a_n
+- Raízes: \\sqrt{x} ou \\sqrt[n]{x}
+- Integrais: \\int_{a}^{b} x dx
+- Somatórios: \\sum_{i=1}^{n} x_i
+
+ATENÇÃO CRÍTICA AO JSON: Como a saída será um JSON, VOCÊ DEVE ESCAPAR AS BARRAS (BACKSLASHES) DO LATEX DUPLAMENTE.
+  ERRADO: \\frac{1}{2} ou \\text{limite} ou \\( x \\) ou \\[ x \\]
+  CORRETO: \\\\frac{1}{2} e \\\\text{limite} e \\\\( x \\\\) e \\\\[ x \\\\]
+  Se você usar apenas uma barra, o parser do JSON transformará \\f, \\t, \\r, etc em caracteres inválidos, corrompendo a equação! É OBRIGATÓRIO usar dupla barra nas funções LaTeX.
 `;
 
 const REGRAS_VISUAIS = `
