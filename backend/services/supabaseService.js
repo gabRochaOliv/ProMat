@@ -177,9 +177,13 @@ async function verificarUsoGuest(sessionId) {
  * Atualiza o plano de um usuário baseando-se no e-mail (usado via Webhook Cakto)
  */
 async function atualizarPlanoPorEmail(email, plano = 'premium') {
-  if (!supabaseAdmin || !email) return { sucesso: false, erro: 'Sem Supabase configurado ou email nulo' };
+  if (!supabaseAdmin || !email) {
+    console.error('[Supabase] Falha de inicialização: Supabase não configurado ou email nulo');
+    return { sucesso: false, erro: 'Sem Supabase configurado ou email nulo' };
+  }
   
   const emailLimpo = email.toLowerCase().trim();
+  console.log(`[Supabase] Tentando atualizar plano para '${plano}' do email '${emailLimpo}'...`);
   
   try {
     const { data, error } = await supabaseAdmin
@@ -189,14 +193,16 @@ async function atualizarPlanoPorEmail(email, plano = 'premium') {
       .select('id, email, plan');
       
     if (error) {
-      console.error(`[Supabase] Erro ao atualizar plano para ${emailLimpo}:`, error.message);
+      console.error(`[Supabase] ERRO POSTGREST ao atualizar plano para ${emailLimpo}:`, error);
       return { sucesso: false, erro: error.message };
     }
     
     if (!data || data.length === 0) {
-      return { sucesso: false, erro: 'Usuário não encontrado com este email' };
+      console.warn(`[Supabase] ALERTA: Usuário não encontrado na tabela 'profiles' com o email: '${emailLimpo}'`);
+      return { sucesso: false, erro: 'Usuário não encontrado com este email na tabela profiles' };
     }
     
+    console.log(`[Supabase] Update realizado com sucesso. Dados do usuário:`, data[0]);
     return { sucesso: true, perfil: data[0] };
   } catch (err) {
     console.error(`[Supabase] Exceção ao atualizar plano para ${emailLimpo}:`, err.message);
