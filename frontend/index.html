@@ -6,6 +6,7 @@
   <meta name="description" content="ProMat — Plataforma educacional avançada para professores de matemática.">
   <title>ProMat — Workspace Educacional</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/png" href="assets/img/logoComFundo.png">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -31,7 +32,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo" onclick="navegarPara('home'); fecharSidebar()">
-        <i class="ph-fill ph-calculator"></i>
+        <img src="assets/img/logoComFundo.png" alt="ProMat Logo" class="logo-img">
         <span>ProMat</span>
         <span class="plan-badge" id="plan-badge" style="display:none;"></span>
       </div>
@@ -98,7 +99,10 @@
       <button class="btn-hamburger" onclick="abrirSidebar()" title="Menu">
         <i class="ph ph-list"></i>
       </button>
-      <span class="mobile-logo">ProMat</span>
+      <div class="mobile-logo-container">
+        <img src="assets/img/logoComFundo.png" alt="ProMat Logo" class="logo-img-mobile">
+        <span class="mobile-logo">ProMat</span>
+      </div>
       <button class="btn-hamburger" onclick="iniciarNovaConversa()" title="Nova conversa">
         <i class="ph ph-plus-circle"></i>
       </button>
@@ -494,40 +498,22 @@
   </div>
 </div>
 
-<!-- ===================== MODAL: AGUARDANDO PAGAMENTO ===================== -->
-<div class="overlay" id="modal-checkout-polling" style="z-index: 9999;">
-  <div class="modal" style="max-width: 400px; text-align: center; padding: 40px 24px;">
-    
-    <!-- Estado: Processando -->
-    <div id="polling-estado-processando">
-      <div style="font-size: 40px; color: var(--brand-500); margin-bottom: 20px;">
-        <i class="ph ph-spinner ph-spin"></i>
-      </div>
-      <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Confirmando seu pagamento...</h2>
-      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5;">
-        Aguarde alguns segundos. Estamos verificando a confirmação com o banco. Você será liberado automaticamente.
-      </p>
+<!-- ===================== AVISO DE CHECKOUT PENDENTE ===================== -->
+<div id="checkout-pending-banner" class="checkout-banner">
+  <div class="checkout-banner-content">
+    <div class="checkout-banner-icon">
+      <i class="ph ph-spinner ph-spin"></i>
     </div>
-
-    <!-- Estado: Demorou (Fallback) -->
-    <div id="polling-estado-demora" style="display: none;">
-      <div style="font-size: 40px; color: var(--alert); margin-bottom: 20px;">
-        <i class="ph-fill ph-clock"></i>
-      </div>
-      <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Processamento pendente</h2>
-      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
-        A confirmação ainda não chegou. Pagamentos via Pix geralmente são instantâneos, mas cartões ou boletos podem levar mais tempo.
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <button class="btn btn-primary" style="width: 100%;" onclick="forcarVerificacaoPagamento()">
-          <i class="ph ph-arrows-clockwise"></i> Já paguei → verificar novamente
-        </button>
-        <button class="btn btn-outline" style="width: 100%;" onclick="fecharPolling()">
-          Voltar e aguardar
-        </button>
-      </div>
+    <div class="checkout-banner-text">
+      <strong>Aguardando Pagamento...</strong>
+      <p>Abrimos o checkout em outra aba. Quando confirmado, seu Premium será liberado automaticamente.</p>
     </div>
-
+  </div>
+  <div class="checkout-banner-actions">
+    <button class="btn btn-outline-soft" onclick="fecharPolling()">Fechar</button>
+    <button class="btn btn-primary-dark" onclick="forcarVerificacaoPagamento()" id="btn-verificar-pagamento">
+      Verificar agora
+    </button>
   </div>
 </div>
 
@@ -562,6 +548,26 @@
       </div>
       <p class="auth-error" id="auth-error"></p>
       <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CELEBRAÇÃO PREMIUM ===================== -->
+<div class="overlay premium-celebration-overlay" id="premium-celebration-overlay">
+  <div class="modal celebration-modal">
+    <div class="celebration-particles" id="celebration-particles"></div>
+    <div class="celebration-content">
+      <div class="celebration-icon-wrapper">
+        <div class="celebration-glow"></div>
+        <i class="ph-fill ph-crown celebration-icon"></i>
+      </div>
+      <h2 class="celebration-title">🎉 Acesso liberado!</h2>
+      <p class="celebration-text">
+        Agora você pode gerar exercícios ilimitados, criar provas completas e usar todo o ProMat.<br><br>Bom uso 🚀
+      </p>
+      <button class="btn btn-primary btn-block btn-celebration" onclick="fecharCelebracaoPremium()">
+        Começar a usar
+      </button>
     </div>
   </div>
 </div>

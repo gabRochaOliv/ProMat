@@ -98,11 +98,14 @@ async function carregarPerfil(userId) {
     AuthState.plano = data.plan;
     AuthState.nome = data.full_name || '';
 
-    // Toast de ativação Premium
+    // Celebração de ativação Premium
     if (data.plan === 'premium') {
       const storageKey = `premium_toast_${userId}`;
       if (!localStorage.getItem(storageKey)) {
-        if (window.mostrarToast) {
+        if (typeof window.mostrarCelebracaoPremium === 'function') {
+          window.mostrarCelebracaoPremium();
+        } else if (window.mostrarToast) {
+          // Fallback caso a função ainda não tenha carregado por algum motivo
           mostrarToast('Premium ativado com sucesso! Seu acesso completo já está liberado.', 'sucesso');
         }
         localStorage.setItem(storageKey, 'true');

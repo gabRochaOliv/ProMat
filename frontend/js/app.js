@@ -1257,22 +1257,17 @@ let pollingInterval = null;
 let pollingTimeout = null;
 
 window.iniciarPollingPremium = function() {
-  const overlay = document.getElementById('modal-checkout-polling');
-  const processandoView = document.getElementById('polling-estado-processando');
-  const demoraView = document.getElementById('polling-estado-demora');
+  const banner = document.getElementById('checkout-pending-banner');
+  if (!banner) return;
 
-  if (!overlay) return;
-
-  // Reseta estado visual
-  overlay.classList.add('ativo');
-  processandoView.style.display = 'block';
-  demoraView.style.display = 'none';
+  // Reseta estado visual (mostra o banner)
+  banner.classList.add('ativo');
 
   // Limpa intervalos antigos para evitar concorrência
   if (pollingInterval) clearInterval(pollingInterval);
   if (pollingTimeout) clearTimeout(pollingTimeout);
 
-  const tempoLimite = 60000; // 60 segundos
+  const tempoLimite = 120000; // 120 segundos (2 minutos)
   const intervaloCheck = 3000; // 3 segundos
 
   // Loop de checagem
@@ -1293,7 +1288,7 @@ window.iniciarPollingPremium = function() {
       localStorage.removeItem('promat_checkout_pending');
       
       fecharPolling();
-      mostrarToast('🎉 Seu plano Premium foi ativado com sucesso!', 'success');
+      mostrarToast('🎉 Seu plano Premium foi ativado com sucesso!', 'sucesso');
       
       // Atualiza a interface
       if (typeof atualizarUIAuth === 'function') {
@@ -1302,21 +1297,20 @@ window.iniciarPollingPremium = function() {
     }
   }, intervaloCheck);
 
-  // Timeout caso demore mais de 60 segundos
+  // Timeout caso demore mais de 120 segundos (para silenciosamente)
   pollingTimeout = setTimeout(() => {
     clearInterval(pollingInterval);
-    processandoView.style.display = 'none';
-    demoraView.style.display = 'block';
+    // Não fecha o banner automaticamente se demorar, mas permite que o usuário feche.
+    // O texto poderia mudar, mas manter o banner visível com botão de forçar verificação é melhor UX.
   }, tempoLimite);
 };
 
 window.forcarVerificacaoPagamento = async function() {
-  const processandoView = document.getElementById('polling-estado-processando');
-  const demoraView = document.getElementById('polling-estado-demora');
-  
-  // Volta para a tela de spinner curto (10 seg)
-  processandoView.style.display = 'block';
-  demoraView.style.display = 'none';
+  const btn = document.getElementById('btn-verificar-pagamento');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Verificando...';
+  }
   
   const usuario = window.Auth?.estado?.usuario;
   if (usuario) {
@@ -1324,22 +1318,60 @@ window.forcarVerificacaoPagamento = async function() {
     if (window.AuthState?.plano === 'premium') {
       localStorage.removeItem('promat_checkout_pending');
       fecharPolling();
-      mostrarToast('🎉 Pagamento localizado! Plano Premium ativado!', 'success');
+      mostrarToast('🎉 Pagamento localizado! Plano Premium ativado!', 'sucesso');
       if (typeof atualizarUIAuth === 'function') atualizarUIAuth();
       return;
     }
   }
 
-  // Se ainda não deu, após 3 seg volta para o erro
-  setTimeout(() => {
-    processandoView.style.display = 'none';
-    demoraView.style.display = 'block';
-  }, 3000);
+  // Se ainda não ativou, avisa via toast em vez de travar a tela
+  mostrarToast('O pagamento ainda não foi confirmado. Tente novamente em instantes.', 'aviso');
+
+  // Restaura o botão
+  if (btn) {
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Verificar agora';
+    }, 1500);
+  }
 };
 
 window.fecharPolling = function() {
-  const overlay = document.getElementById('modal-checkout-polling');
-  if (overlay) overlay.classList.remove('ativo');
+  const banner = document.getElementById('checkout-pending-banner');
+  if (banner) banner.classList.remove('ativo');
+  
+  // Paramos o polling em background quando o usuário fecha o aviso? 
+  // Na verdade, é melhor manter em background se possível, mas como a UX pede pra fechar o aviso, 
+  // limpar o flag do localStorage impede que ele volte no F5, o que é bom se o user desistiu.
   if (pollingInterval) clearInterval(pollingInterval);
   if (pollingTimeout) clearTimeout(pollingTimeout);
+  
+  // Opcional: remover o flag se o usuário explicitamente fechar o banner
+  // Se for removido, ele não fará polling automático no próximo login/F5, 
+  // o que é OK se ele sabe que pagou e vai checar depois.
+  localStorage.removeItem('promat_checkout_pending');
+};
+
+/* =========================================
+   CELEBRAÇÃO DE ATIVAÇÃO PREMIUM
+========================================= */
+window.mostrarCelebracaoPremium = function() {
+  const overlay = document.getElementById('premium-celebration-overlay');
+  if (overlay) {
+    overlay.classList.add('ativo');
+    
+    // Efeito de confete opcional via CSS já é ativado pela classe .ativo
+    
+    // Atualiza a badge imediatamente para reforçar a mudança
+    if (typeof atualizarUIAuth === 'function') {
+      atualizarUIAuth();
+    }
+  }
+};
+
+window.fecharCelebracaoPremium = function() {
+  const overlay = document.getElementById('premium-celebration-overlay');
+  if (overlay) {
+    overlay.classList.remove('ativo');
+  }
 };

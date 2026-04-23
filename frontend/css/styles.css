@@ -111,7 +111,7 @@ body {
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
@@ -119,6 +119,13 @@ body {
   text-decoration: none;
   cursor: pointer;
 }
+
+.logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
 .logo i { font-size: 26px; color: var(--brand-600); }
 
 .plan-badge {
@@ -612,6 +619,18 @@ body {
   padding: 4px;
   border-radius: var(--radius-sm);
 }
+.mobile-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-img-mobile {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+}
+
 .mobile-logo {
   font-family: var(--font-display);
   font-size: 18px;
@@ -1713,4 +1732,219 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 24px;
   line-height: 1.5;
   flex: 1;
+}
+
+/* =====================================
+   AVISO DE CHECKOUT PENDENTE (NÃO BLOQUEANTE)
+   ===================================== */
+.checkout-banner {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 380px;
+  max-width: calc(100vw - 48px);
+  background: var(--bg-card);
+  border: 1px solid var(--brand-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.checkout-banner.ativo {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.checkout-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: var(--brand-50);
+}
+
+.checkout-banner-icon {
+  font-size: 28px;
+  color: var(--brand-500);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkout-banner-text {
+  flex: 1;
+}
+
+.checkout-banner-text strong {
+  display: block;
+  font-size: 15px;
+  font-family: var(--font-display);
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.checkout-banner-text p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.checkout-banner-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+}
+
+.checkout-banner-actions button {
+  flex: 1;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+/* =====================================
+   MODAL DE CELEBRAÇÃO PREMIUM
+   ===================================== */
+.premium-celebration-overlay {
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.6); /* Fundo um pouco mais escuro/imersivo */
+  backdrop-filter: blur(4px);
+}
+
+.celebration-modal {
+  max-width: 440px;
+  text-align: center;
+  padding: 40px 32px;
+  overflow: visible; /* Permitir que o brilho e confetes transbordem se preciso */
+  transform: scale(0.95);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+}
+
+.premium-celebration-overlay.ativo .celebration-modal {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.celebration-content {
+  position: relative;
+  z-index: 2;
+}
+
+.celebration-icon-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.celebration-glow {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.4) 0%, rgba(250, 204, 21, 0) 70%);
+  border-radius: 50%;
+  animation: pulse-glow 2s infinite ease-in-out;
+  z-index: 1;
+}
+
+.celebration-icon {
+  font-size: 56px;
+  color: #facc15; /* Amarelo dourado premium */
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+  animation: float-icon 3s infinite ease-in-out;
+}
+
+.celebration-title {
+  font-size: 26px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.celebration-text {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.btn-celebration {
+  font-size: 15px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+  transform: translateY(0);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.btn-celebration:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+/* Animações */
+@keyframes pulse-glow {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+@keyframes float-icon {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+/* Partículas de CSS simples */
+.celebration-particles {
+  position: absolute;
+  inset: -50px;
+  z-index: 1;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle, #facc15 4px, transparent 4px),
+    radial-gradient(circle, #3b82f6 3px, transparent 3px),
+    radial-gradient(circle, #10b981 4px, transparent 4px),
+    radial-gradient(circle, #ef4444 3px, transparent 3px),
+    radial-gradient(circle, #facc15 5px, transparent 5px);
+  background-size: 
+    10px 10px, 
+    12px 12px, 
+    8px 8px, 
+    14px 14px, 
+    12px 12px;
+  background-position: 
+    10% 20%, 
+    80% 30%, 
+    20% 80%, 
+    70% 90%, 
+    50% 10%;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.premium-celebration-overlay.ativo .celebration-particles {
+  animation: pop-particles 0.8s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop-particles {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.2); }
 }
