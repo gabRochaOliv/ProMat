@@ -132,7 +132,7 @@ function atualizarUIContexto() {
 // ============================================================
 function abrirModalNovaPasta() {
   fecharSidebar();
-  
+
   if (window.Auth && window.Auth.estado.plano !== 'premium') {
     mostrarModalUpgrade('Organizar gerações em Pastas ilimitadas é um benefício exclusivo do plano Premium.');
     return;
@@ -242,10 +242,10 @@ function abrirFormulario(tipo) {
   actionTypeInput.value = tipo;
 
   const confs = {
-    'exercicios':      { icone: 'ph-list-numbers',        titulo: 'Lista de Exercícios',       qtd: true,  nivel: true },
-    'prova':           { icone: 'ph-exam',                 titulo: 'Prova / Avaliação',          qtd: true,  nivel: true },
-    'atividade-extra': { icone: 'ph-lightbulb',            titulo: 'Desafio / Atividade Extra',  qtd: false, nivel: true },
-    'explicacao':      { icone: 'ph-chalkboard-teacher',   titulo: 'Explicação de Tema',         qtd: false, nivel: false },
+    'exercicios': { icone: 'ph-list-numbers', titulo: 'Lista de Exercícios', qtd: true, nivel: true },
+    'prova': { icone: 'ph-exam', titulo: 'Prova / Avaliação', qtd: true, nivel: true },
+    'atividade-extra': { icone: 'ph-lightbulb', titulo: 'Desafio / Atividade Extra', qtd: false, nivel: true },
+    'explicacao': { icone: 'ph-chalkboard-teacher', titulo: 'Explicação de Tema', qtd: false, nivel: false },
   };
 
   const c = confs[tipo];
@@ -395,10 +395,10 @@ async function submeterFormulario() {
 
   try {
     let res;
-    if (tipo === 'exercicios')      res = await gerarExercicios(params);
-    if (tipo === 'prova')           res = await gerarProva(params);
+    if (tipo === 'exercicios') res = await gerarExercicios(params);
+    if (tipo === 'prova') res = await gerarProva(params);
     if (tipo === 'atividade-extra') res = await gerarAtividadeExtra(params);
-    if (tipo === 'explicacao')      res = await gerarExplicacao(params);
+    if (tipo === 'explicacao') res = await gerarExplicacao(params);
 
     estado.dadosAtuais = res.dados;
     estado.tipoAtual = tipo;
@@ -488,11 +488,11 @@ function renderizarResultado(dados, tipo, pastaId) {
   if (tipo === 'explicacao') {
     renderizarExplicacaoDOM(dados, listaEl);
     document.getElementById('toolbar-btn-gabarito').style.display = 'none';
-    if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => {});
+    if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => { });
   } else if (tipo === 'atividade-extra' && dados.etapas) {
     renderizarDesafioDOM(dados, listaEl);
     document.getElementById('toolbar-btn-gabarito').style.display = dados.gabarito?.length ? '' : 'none';
-    if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => {});
+    if (window.MathJax) MathJax.typesetPromise([listaEl]).catch(() => { });
   } else {
     document.getElementById('toolbar-btn-gabarito').style.display = '';
     const itens = dados.exercicios || dados.questoes || dados.itens || [];
@@ -520,11 +520,11 @@ function renderizarResultado(dados, tipo, pastaId) {
       // Enunciado (texto)
       const enunciadoEl = document.createElement('p');
       enunciadoEl.className = 'exercicio-enunciado';
-      
+
       let textoEnunciado = item.enunciado || '';
       // Garante quebra de linha antes de itens romanos (I, II, III...) mesmo se colados em dois-pontos ou pontos
       textoEnunciado = textoEnunciado.replace(/([:.\s])\s*([IVX]+\.)/g, '$1\n$2');
-      
+
       enunciadoEl.innerHTML = MathRenderer.prepararTexto(textoEnunciado).replace(/\n/g, '<br>');
       textoEl.appendChild(enunciadoEl);
 
@@ -532,20 +532,20 @@ function renderizarResultado(dados, tipo, pastaId) {
       if (item.opcoes && Array.isArray(item.opcoes) && item.opcoes.length > 0) {
         const opcoesContainer = document.createElement('div');
         opcoesContainer.className = 'exercicio-opcoes';
-        
+
         const letras = ['a', 'b', 'c', 'd', 'e', 'f'];
         item.opcoes.forEach((opt, oIdx) => {
           const optEl = document.createElement('div');
           optEl.className = 'opcao-item';
-          
+
           const letraEl = document.createElement('span');
           letraEl.className = 'opcao-letra';
           letraEl.textContent = `${letras[oIdx]})`;
-          
+
           const labelEl = document.createElement('span');
           labelEl.className = 'opcao-texto';
           labelEl.textContent = MathRenderer.prepararTexto(opt);
-          
+
           optEl.appendChild(letraEl);
           optEl.appendChild(labelEl);
           opcoesContainer.appendChild(optEl);
@@ -680,7 +680,7 @@ function renderizarExplicacaoDOM(dados, container) {
   if (dados.referencias && Array.isArray(dados.referencias) && dados.referencias.length > 0) {
     const linkContainer = document.createElement('div');
     linkContainer.style.cssText = 'margin-top:40px; padding-top:24px; border-top:1px solid var(--border-color);';
-    
+
     const h4 = document.createElement('h4');
     h4.style.cssText = 'font-family:var(--font-display); font-size:16px; color:var(--text-main); margin-bottom:16px;';
     h4.textContent = '📚 Referências para aprofundamento (Sites Brasileiros):';
@@ -694,7 +694,7 @@ function renderizarExplicacaoDOM(dados, container) {
       refCard.href = ref.url;
       refCard.target = '_blank';
       refCard.style.cssText = 'text-decoration:none; display:block; padding:12px; background:var(--bg-app); border:1px solid var(--border-color); border-radius:8px; transition:var(--trans);';
-      
+
       // Hover effect emulado via JS inline ou classes existentes
       refCard.onmouseover = () => { refCard.style.borderColor = 'var(--brand-400)'; refCard.style.background = 'white'; };
       refCard.onmouseout = () => { refCard.style.borderColor = 'var(--border-color)'; refCard.style.background = 'var(--bg-app)'; };
@@ -702,11 +702,11 @@ function renderizarExplicacaoDOM(dados, container) {
       const refNome = document.createElement('strong');
       refNome.style.cssText = 'display:block; font-size:13px; color:var(--brand-700); margin-bottom:4px;';
       refNome.textContent = ref.nome;
-      
+
       const refDesc = document.createElement('p');
       refDesc.style.cssText = 'font-size:12px; color:var(--text-muted); line-height:1.4; margin:0;';
       refDesc.textContent = ref.descricao;
-      
+
       refCard.appendChild(refNome);
       refCard.appendChild(refDesc);
       refGrid.appendChild(refCard);
@@ -863,7 +863,7 @@ function abrirModalGabarito() {
 
         const resolEl = document.createElement('div');
         resolEl.className = 'gab-card-resolucao';
-        
+
         let textoFinal = g.resolucao || '';
         // Garante quebras antes de "Passo N:" caso a IA esqueça
         if (!textoFinal.includes('\n')) {
@@ -880,7 +880,7 @@ function abrirModalGabarito() {
 
   overlay.classList.add('ativo');
 
-  if (window.MathJax) MathJax.typesetPromise([lista]).catch(() => {});
+  if (window.MathJax) MathJax.typesetPromise([lista]).catch(() => { });
 }
 
 function fecharModalGabarito() {
@@ -1087,8 +1087,8 @@ const HistoryManager = {
                 <i class="ph ph-plus" style="margin-right:4px;"></i> Criar conteúdo aqui
               </div>
               ${pasta.itens.length === 0
-                ? '<div class="estado-vazio-mini">Pasta vazia</div>'
-                : pasta.itens.map(i => `
+            ? '<div class="estado-vazio-mini">Pasta vazia</div>'
+            : pasta.itens.map(i => `
                     <div class="historico-item" onclick="HistoryManager.abrirItem('${i.id}', '${pasta.id}')">
                       <div class="historico-item-conteudo">
                         <div class="historico-titulo">${escaparHtml(i.tema)}</div>
@@ -1102,7 +1102,7 @@ const HistoryManager = {
                       </button>
                     </div>
                   `).join('')
-              }
+          }
             </div>
           </div>`;
       }).join('');
@@ -1203,13 +1203,13 @@ const MathRenderer = {
   prepararTexto: (texto) => {
     if (!texto) return '';
     let limpo = String(texto);
-    
+
     // 1. Reduzir escapes duplos gerados pela IA (\\\\ -> \\)
     limpo = limpo.replace(/\\\\/g, '\\');
-    
+
     // 2. Fallback: Converter blocos antigos $$ ... $$ para \\[ ... \\]
     limpo = limpo.replace(/\$\$(.*?)\$\$/gs, '\\[$1\\]');
-    
+
     // 3. Fallback: Converter inline antigo $ ... $ para \\( ... \\)
     // Previne match com dinheiro (R$) garantindo espaço ou início da linha
     limpo = limpo.replace(/(^|\s)\$([^$\n]+?)\$(?=\s|[.,!?]|$)/g, '$1\\($2\\)');
@@ -1221,7 +1221,7 @@ const MathRenderer = {
 // ============================================================
 // MODAL UPGRADE PREMIUM
 // ============================================================
-window.mostrarModalUpgrade = function(mensagem) {
+window.mostrarModalUpgrade = function (mensagem) {
   const overlay = document.getElementById('modal-upgrade-overlay');
   const msgEl = document.getElementById('upgrade-mensagem');
   if (overlay && msgEl) {
@@ -1230,15 +1230,9 @@ window.mostrarModalUpgrade = function(mensagem) {
   }
 };
 
-window.iniciarCheckoutPremium = function(plano) {
+window.iniciarCheckoutPremium = function (plano) {
   const email = window.Auth?.estado?.usuario?.email || '';
-  const userId = window.Auth?.estado?.usuario?.id || '';
   const queryParam = email ? `?email=${encodeURIComponent(email)}` : '';
-
-  // Limpa o cache de toast para garantir que a celebração apareça se ele ativar agora
-  if (userId) {
-    localStorage.removeItem(`premium_toast_${userId}`);
-  }
 
   let checkoutUrl = '';
   if (plano === 'anual') checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
@@ -1262,7 +1256,7 @@ window.iniciarCheckoutPremium = function(plano) {
 let pollingInterval = null;
 let pollingTimeout = null;
 
-window.iniciarPollingPremium = function() {
+window.iniciarPollingPremium = function () {
   const banner = document.getElementById('checkout-pending-banner');
   if (!banner) return;
 
@@ -1292,10 +1286,10 @@ window.iniciarPollingPremium = function() {
       clearInterval(pollingInterval);
       clearTimeout(pollingTimeout);
       localStorage.removeItem('promat_checkout_pending');
-      
+
       fecharPolling();
-      // O mostrarToast foi removido daqui pois o carregarPerfil já chamará o mostrarCelebracaoPremium()
-      
+      mostrarToast('🎉 Seu plano Premium foi ativado com sucesso!', 'sucesso');
+
       // Atualiza a interface
       if (typeof atualizarUIAuth === 'function') {
         atualizarUIAuth();
@@ -1311,16 +1305,47 @@ window.iniciarPollingPremium = function() {
   }, tempoLimite);
 };
 
-window.fecharPolling = function() {
+window.forcarVerificacaoPagamento = async function () {
+  const btn = document.getElementById('btn-verificar-pagamento');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Verificando...';
+  }
+
+  const usuario = window.Auth?.estado?.usuario;
+  if (usuario) {
+    await window.carregarPerfil(usuario.id);
+    if (window.AuthState?.plano === 'premium') {
+      localStorage.removeItem('promat_checkout_pending');
+      fecharPolling();
+      mostrarToast('🎉 Pagamento localizado! Plano Premium ativado!', 'sucesso');
+      if (typeof atualizarUIAuth === 'function') atualizarUIAuth();
+      return;
+    }
+  }
+
+  // Se ainda não ativou, avisa via toast em vez de travar a tela
+  mostrarToast('O pagamento ainda não foi confirmado. Tente novamente em instantes.', 'aviso');
+
+  // Restaura o botão
+  if (btn) {
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Verificar agora';
+    }, 1500);
+  }
+};
+
+window.fecharPolling = function () {
   const banner = document.getElementById('checkout-pending-banner');
   if (banner) banner.classList.remove('ativo');
-  
+
   // Paramos o polling em background quando o usuário fecha o aviso? 
   // Na verdade, é melhor manter em background se possível, mas como a UX pede pra fechar o aviso, 
   // limpar o flag do localStorage impede que ele volte no F5, o que é bom se o user desistiu.
   if (pollingInterval) clearInterval(pollingInterval);
   if (pollingTimeout) clearTimeout(pollingTimeout);
-  
+
   // Opcional: remover o flag se o usuário explicitamente fechar o banner
   // Se for removido, ele não fará polling automático no próximo login/F5, 
   // o que é OK se ele sabe que pagou e vai checar depois.
@@ -1330,13 +1355,13 @@ window.fecharPolling = function() {
 /* =========================================
    CELEBRAÇÃO DE ATIVAÇÃO PREMIUM
 ========================================= */
-window.mostrarCelebracaoPremium = function() {
+window.mostrarCelebracaoPremium = function () {
   const overlay = document.getElementById('premium-celebration-overlay');
   if (overlay) {
     overlay.classList.add('ativo');
-    
+
     // Efeito de confete opcional via CSS já é ativado pela classe .ativo
-    
+
     // Atualiza a badge imediatamente para reforçar a mudança
     if (typeof atualizarUIAuth === 'function') {
       atualizarUIAuth();
@@ -1344,7 +1369,7 @@ window.mostrarCelebracaoPremium = function() {
   }
 };
 
-window.fecharCelebracaoPremium = function() {
+window.fecharCelebracaoPremium = function () {
   const overlay = document.getElementById('premium-celebration-overlay');
   if (overlay) {
     overlay.classList.remove('ativo');
