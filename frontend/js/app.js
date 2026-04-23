@@ -1232,7 +1232,13 @@ window.mostrarModalUpgrade = function(mensagem) {
 
 window.iniciarCheckoutPremium = function(plano) {
   const email = window.Auth?.estado?.usuario?.email || '';
+  const userId = window.Auth?.estado?.usuario?.id || '';
   const queryParam = email ? `?email=${encodeURIComponent(email)}` : '';
+
+  // Limpa o cache de toast para garantir que a celebração apareça se ele ativar agora
+  if (userId) {
+    localStorage.removeItem(`premium_toast_${userId}`);
+  }
 
   let checkoutUrl = '';
   if (plano === 'anual') checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
@@ -1288,7 +1294,7 @@ window.iniciarPollingPremium = function() {
       localStorage.removeItem('promat_checkout_pending');
       
       fecharPolling();
-      mostrarToast('🎉 Seu plano Premium foi ativado com sucesso!', 'sucesso');
+      // O mostrarToast foi removido daqui pois o carregarPerfil já chamará o mostrarCelebracaoPremium()
       
       // Atualiza a interface
       if (typeof atualizarUIAuth === 'function') {
@@ -1303,37 +1309,6 @@ window.iniciarPollingPremium = function() {
     // Não fecha o banner automaticamente se demorar, mas permite que o usuário feche.
     // O texto poderia mudar, mas manter o banner visível com botão de forçar verificação é melhor UX.
   }, tempoLimite);
-};
-
-window.forcarVerificacaoPagamento = async function() {
-  const btn = document.getElementById('btn-verificar-pagamento');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Verificando...';
-  }
-  
-  const usuario = window.Auth?.estado?.usuario;
-  if (usuario) {
-    await window.carregarPerfil(usuario.id);
-    if (window.AuthState?.plano === 'premium') {
-      localStorage.removeItem('promat_checkout_pending');
-      fecharPolling();
-      mostrarToast('🎉 Pagamento localizado! Plano Premium ativado!', 'sucesso');
-      if (typeof atualizarUIAuth === 'function') atualizarUIAuth();
-      return;
-    }
-  }
-
-  // Se ainda não ativou, avisa via toast em vez de travar a tela
-  mostrarToast('O pagamento ainda não foi confirmado. Tente novamente em instantes.', 'aviso');
-
-  // Restaura o botão
-  if (btn) {
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Verificar agora';
-    }, 1500);
-  }
 };
 
 window.fecharPolling = function() {
