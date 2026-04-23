@@ -30,31 +30,36 @@ router.post('/cakto', async (req, res) => {
     console.log(JSON.stringify(sanitizePayload(payload), null, 2));
 
     // 2. Identificar o tipo do evento
-    const eventType = payload.event || payload.type || payload.status || payload.data?.status || payload.data?.event;
+    const eventType = payload.event || payload.type || payload.status || payload.data?.status || payload.data?.event || payload.order_status;
     console.log(`[Webhook Cakto] Tipo de evento cru: "${eventType}"`);
 
-    // 3. Extrair o Email do Cliente
+    // 3. Extrair o Email do Cliente (Buscador Recursivo Agressivo)
     let email = null;
     
-    // Tenta diferentes caminhos comuns de gateways
-    const possiveisCaminhos = [
-      payload.data?.customer?.email,
-      payload.customer?.email,
-      payload.data?.buyer?.email,
-      payload.buyer?.email,
-      payload.email,
-      payload.data?.client?.email,
-      payload.client?.email,
-      payload.data?.email
-    ];
-
-    for (const caminho of possiveisCaminhos) {
-      if (caminho && typeof caminho === 'string' && caminho.includes('@')) {
-        email = caminho;
-        break;
+    function extractEmailRecursive(obj) {
+      if (!obj) return null;
+      if (typeof obj === 'string' && obj.includes('@') && obj.includes('.')) {
+        // Validação básica de email
+        if (obj.trim().length > 5 && !obj.includes(' ')) return obj.trim().toLowerCase();
       }
+      if (typeof obj === 'object') {
+        // Prioriza chaves conhecidas primeiro
+        const knownKeys = ['email', 'customer_email', 'buyer_email', 'client_email'];
+        for (const key of knownKeys) {
+          if (obj[key] && typeof obj[key] === 'string' && obj[key].includes('@')) {
+             return obj[key].trim().toLowerCase();
+          }
+        }
+        // Se não achou nas conhecidas, busca em tudo
+        for (const key in obj) {
+          const found = extractEmailRecursive(obj[key]);
+          if (found) return found;
+        }
+      }
+      return null;
     }
 
+    email = extractEmailRecursive(payload);
     console.log(`[Webhook Cakto] Email extraído: ${email ? `"${email}"` : 'NENHUM EMAIL ENCONTRADO'}`);
 
     if (!email) {
@@ -63,9 +68,13 @@ router.post('/cakto', async (req, res) => {
     }
 
     // 4. Validação de Eventos de Sucesso
-    // Adicionamos várias variações comuns de status de sucesso da Cakto/Kiwify/Hotmart
-    const statusSucesso = ['approved', 'paid', 'active', 'order.approved', 'charge.succeeded', 'subscription.active', 'payment_approved', 'pix.paid'];
-    const isApproved = eventType ? statusSucesso.includes(String(eventType).toLowerCase()) : false;
+    // Adicionamos variações em português e inglês para cobrir 100% dos cenários
+    const statusSucesso = [
+      'approved', 'paid', 'active', 'order.approved', 'charge.succeeded', 
+      'subscription.active', 'payment_approved', 'pix.paid', 'completed',
+      'aprovado', 'pago', 'sucesso', 'concluido', 'ativo'
+    ];
+    const isApproved = eventType ? statusSucesso.includes(String(eventType).toLowerCase().trim()) : false;
 
     console.log(`[Webhook Cakto] Status verificado: "${String(eventType).toLowerCase()}" | É aprovado? ${isApproved}`);
 
