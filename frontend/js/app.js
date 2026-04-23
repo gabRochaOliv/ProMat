@@ -1232,19 +1232,114 @@ window.mostrarModalUpgrade = function(mensagem) {
 
 window.iniciarCheckoutPremium = function(plano) {
   const email = window.Auth?.estado?.usuario?.email || '';
-  
-  // Envia o e-mail na URL para pré-preencher o checkout, se a plataforma suportar
   const queryParam = email ? `?email=${encodeURIComponent(email)}` : '';
 
   let checkoutUrl = '';
-  if (plano === 'anual') {
-    checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
-  } else if (plano === 'mensal') {
-    checkoutUrl = 'https://pay.cakto.com.br/zscdfkk' + queryParam;
-  } else {
-    checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
-  }
+  if (plano === 'anual') checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
+  else if (plano === 'mensal') checkoutUrl = 'https://pay.cakto.com.br/zscdfkk' + queryParam;
+  else checkoutUrl = 'https://pay.cakto.com.br/x2uug56_859311' + queryParam;
+
+  // Fecha modal de upgrade atual
+  document.getElementById('modal-upgrade-overlay').classList.remove('ativo');
 
   // Redireciona o usuário (em nova aba)
   window.open(checkoutUrl, '_blank');
+
+  // Ativa a flag e começa o polling imediatamente
+  localStorage.setItem('promat_checkout_pending', 'true');
+  window.iniciarPollingPremium();
+};
+
+/* =========================================
+   SISTEMA DE POLLING PÓS-PAGAMENTO
+========================================= */
+let pollingInterval = null;
+let pollingTimeout = null;
+
+window.iniciarPollingPremium = function() {
+  const overlay = document.getElementById('modal-checkout-polling');
+  const processandoView = document.getElementById('polling-estado-processando');
+  const demoraView = document.getElementById('polling-estado-demora');
+
+  if (!overlay) return;
+
+  // Reseta estado visual
+  overlay.classList.add('ativo');
+  processandoView.style.display = 'block';
+  demoraView.style.display = 'none';
+
+  // Limpa intervalos antigos para evitar concorrência
+  if (pollingInterval) clearInterval(pollingInterval);
+  if (pollingTimeout) clearTimeout(pollingTimeout);
+
+  const tempoLimite = 60000; // 60 segundos
+  const intervaloCheck = 3000; // 3 segundos
+
+  // Loop de checagem
+  pollingInterval = setInterval(async () => {
+    const usuario = window.Auth?.estado?.usuario;
+    if (!usuario) {
+      clearInterval(pollingInterval);
+      return;
+    }
+
+    // Força o auth.js a buscar o perfil atualizado do Supabase
+    await window.carregarPerfil(usuario.id);
+
+    if (window.AuthState?.plano === 'premium') {
+      // SUCESSO!
+      clearInterval(pollingInterval);
+      clearTimeout(pollingTimeout);
+      localStorage.removeItem('promat_checkout_pending');
+      
+      fecharPolling();
+      mostrarToast('🎉 Seu plano Premium foi ativado com sucesso!', 'success');
+      
+      // Atualiza a interface
+      if (typeof atualizarUIAuth === 'function') {
+        atualizarUIAuth();
+      }
+    }
+  }, intervaloCheck);
+
+  // Timeout caso demore mais de 60 segundos
+  pollingTimeout = setTimeout(() => {
+    clearInterval(pollingInterval);
+    processandoView.style.display = 'none';
+    demoraView.style.display = 'block';
+  }, tempoLimite);
+};
+
+window.forcarVerificacaoPagamento = async function() {
+  const processandoView = document.getElementById('polling-estado-processando');
+  const demoraView = document.getElementById('polling-estado-demora');
+  
+  // Volta para a tela de spinner curto (10 seg)
+  processandoView.style.display = 'block';
+  demoraView.style.display = 'none';
+  
+  const usuario = window.Auth?.estado?.usuario;
+  if (usuario) {
+    await window.carregarPerfil(usuario.id);
+    if (window.AuthState?.plano === 'premium') {
+      localStorage.removeItem('promat_checkout_pending');
+      fecharPolling();
+      mostrarToast('🎉 Pagamento localizado! Plano Premium ativado!', 'success');
+      if (typeof atualizarUIAuth === 'function') atualizarUIAuth();
+      return;
+    }
+  }
+
+  // Se ainda não deu, após 3 seg volta para o erro
+  setTimeout(() => {
+    processandoView.style.display = 'none';
+    demoraView.style.display = 'block';
+  }, 3000);
+};
+
+window.fecharPolling = function() {
+  const overlay = document.getElementById('modal-checkout-polling');
+  if (overlay) overlay.classList.remove('ativo');
+  if (pollingInterval) clearInterval(pollingInterval);
+  if (pollingTimeout) clearTimeout(pollingTimeout);
 };

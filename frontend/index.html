@@ -463,7 +463,7 @@
       Você atingiu o limite gratuito. Desbloqueie todas as ferramentas exclusivas e crie sem interrupções.
     </p>
 
-    <!-- Benefícios (Opcional manter no topo se a lista for curta, ou dentro do card. Vamos deixar centralizado no topo) -->
+    <!-- Benefícios -->
     <ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; list-style: none; padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--text-main);">
       <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Gerações ilimitadas</li>
       <li><i class="ph-fill ph-check-circle" style="color: var(--brand-600); margin-right: 4px;"></i> Exportação em PDF</li>
@@ -491,6 +491,43 @@
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: AGUARDANDO PAGAMENTO ===================== -->
+<div class="overlay" id="modal-checkout-polling" style="z-index: 9999;">
+  <div class="modal" style="max-width: 400px; text-align: center; padding: 40px 24px;">
+    
+    <!-- Estado: Processando -->
+    <div id="polling-estado-processando">
+      <div style="font-size: 40px; color: var(--brand-500); margin-bottom: 20px;">
+        <i class="ph ph-spinner ph-spin"></i>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Confirmando seu pagamento...</h2>
+      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5;">
+        Aguarde alguns segundos. Estamos verificando a confirmação com o banco. Você será liberado automaticamente.
+      </p>
+    </div>
+
+    <!-- Estado: Demorou (Fallback) -->
+    <div id="polling-estado-demora" style="display: none;">
+      <div style="font-size: 40px; color: var(--alert); margin-bottom: 20px;">
+        <i class="ph-fill ph-clock"></i>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">Processamento pendente</h2>
+      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;">
+        A confirmação ainda não chegou. Pagamentos via Pix geralmente são instantâneos, mas cartões ou boletos podem levar mais tempo.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn btn-primary" style="width: 100%;" onclick="forcarVerificacaoPagamento()">
+          <i class="ph ph-arrows-clockwise"></i> Já paguei → verificar novamente
+        </button>
+        <button class="btn btn-outline" style="width: 100%;" onclick="fecharPolling()">
+          Voltar e aguardar
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 

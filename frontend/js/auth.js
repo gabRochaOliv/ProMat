@@ -48,6 +48,23 @@ async function initAuth() {
 
   atualizarUIAuth();
 
+  // Verifica se o usuário acabou de voltar de um checkout Cakto
+  const urlParams = new URLSearchParams(window.location.search);
+  const checkoutSuccess = urlParams.get('checkout') === 'success';
+  const hasPendingFlag = localStorage.getItem('promat_checkout_pending') === 'true';
+
+  if ((checkoutSuccess || hasPendingFlag) && AuthState.usuario && AuthState.plano !== 'premium') {
+    // Limpa a URL para não ficar poluída se for o caso
+    if (checkoutSuccess) window.history.replaceState({}, document.title, window.location.pathname);
+    
+    // Garante que o flag está setado para o polling funcionar corretamente
+    localStorage.setItem('promat_checkout_pending', 'true');
+    
+    if (typeof window.iniciarPollingPremium === 'function') {
+      window.iniciarPollingPremium();
+    }
+  }
+
   // Listener de mudanças de auth (login, logout, refresh de token)
   sb.auth.onAuthStateChange(async (_event, session) => {
     const eraLogado = !!AuthState.usuario;
