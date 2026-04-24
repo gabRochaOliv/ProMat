@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crie provas de matemática em 2 minutos — IA especializada em BNCC | ProMat</title>
+  <meta name="description" content="IA treinada pra matemática brasileira. Gere listas, exercícios e provas com gabarito validado e PDF pronto pra imprimir. Teste grátis, sem cartão." />
+
+  <meta property="og:title" content="ProMat — Crie provas de matemática em 2 minutos" />
+  <meta property="og:description" content="IA especializada em matemática escolar brasileira. Gabarito validado, BNCC, PDF pronto pra imprimir." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== NAV STICKY ===== -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#top" class="nav-logo" aria-label="ProMat">
+        <img src="assets/logo.png" alt="ProMat" />
+        <span>ProMat</span>
+      </a>
+
+      <nav class="nav-pill" aria-label="Navegação principal">
+        <a href="#mecanismo">Como funciona</a>
+        <a href="#faq">Perguntas</a>
+      </nav>
+
+      <a href="#cta-final" class="nav-cta" data-cta="nav">
+        Testar grátis
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="container">
+
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Para professores de matemática cansados de montar prova de madrugada.
+        </div>
+
+        <h1 class="hero-headline">
+          Seu material de matemática, pronto em <em>2 minutos</em>.
+        </h1>
+
+        <p class="hero-sub">
+          Listas, provas, desafios e explicações — gerados por uma IA especializada em matemática escolar brasileira. Com gabarito validado, BNCC e PDF pronto pra imprimir.<span class="cursor" aria-hidden="true">|</span>
+        </p>
+
+        <div class="hero-cta-wrap">
+          <a href="#" class="cta-primary" data-cta="hero">
+            Testar grátis agora
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+          <p class="cta-micro">Sem cartão. Sem instalação. Primeira prova em 2 minutos.</p>
+        </div>
+
+        <div class="hero-preview" aria-label="Preview do produto">
+          <div class="preview-placeholder">
+            <div class="preview-chrome">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="preview-body">
+              <div class="preview-line preview-line-title"></div>
+              <div class="preview-line preview-line-80"></div>
+              <div class="preview-line preview-line-60"></div>
+              <div class="preview-line preview-line-90"></div>
+              <div class="preview-line preview-line-50"></div>
+              <div class="preview-tag">PDF pronto pra imprimir</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- integration bar -->
+        <div class="integration-bar">
+          <div class="ib-group">
+            <span class="ib-label">Compatível com:</span>
+            <span class="ib-chip">Word</span>
+            <span class="ib-chip">PDF</span>
+            <span class="ib-chip">Google Classroom</span>
+            <span class="ib-chip">Moodle</span>
+          </div>
+          <div class="ib-divider" aria-hidden="true"></div>
+          <div class="ib-group">
+            <span class="ib-label">Níveis:</span>
+            <span class="ib-chip">Fundamental II</span>
+            <span class="ib-chip">Médio</span>
+            <span class="ib-chip">Vestibular</span>
+            <span class="ib-chip">Olimpíada</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== AGITAÇÃO ===== -->
+    <section class="problem">
+      <div class="container container-narrow">
+        <h2 class="h-serif-xl">Você não virou professor de matemática pra isso.</h2>
+
+        <div class="problem-body">
+          <p>Domingo, 22h. A família terminou de jantar. Você ainda tá no Word.</p>
+          <p>Copiando questão do livro didático. Reformatando fórmula que saiu quebrada. Digitando gabarito à mão. Conferindo duas vezes porque tem medo de errar uma resposta e corrigir 40 provas com critério torto.</p>
+          <p>Amanhã tem aula às 7h. E você ainda precisa fazer a versão B, porque a coordenação pediu duas versões pra evitar cola.</p>
+          <p class="problem-kicker"><strong>Isso não é exceção. É todo fim de semana.</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TRANSIÇÃO ===== -->
+    <section class="transition">
+      <div class="container container-narrow">
+        <h2 class="h-serif-giant">Existe um jeito de isso tudo virar <em>2 minutos</em>.</h2>
+      </div>
+    </section>
+
+    <!-- ===== MECANISMO ===== -->
+    <section class="mechanism" id="mecanismo">
+      <div class="container">
+
+        <div class="mech-head">
+          <h2 class="h-serif-xl dark">Não é o ChatGPT. É uma IA especializada em matemática escolar brasileira.</h2>
+          <p class="mech-intro">
+            O ChatGPT faz uma coisa: gera texto. E na hora de matemática, ele erra. Fórmula sai quebrada. Conta não fecha. Gabarito tá errado.
+            <br /><br />
+            <strong>ProMat</strong> faz três coisas, e por isso funciona:
+          </p>
+        </div>
+
+        <div class="mech-layout">
+
+          <aside class="mech-sidebar" aria-label="Índice">
+            <ul>
+              <li data-target="mech-1" class="active">
+                <span class="dot" aria-hidden="true"></span>
+                <span class="num">01</span>
+                <span class="label">Geração especializada</span>
+              </li>
+              <li data-target="mech-2">
+                <span class="dot" aria-hidden="true"></span>
+                <span class="num">02</span>
+                <span class="label">Validação matemática</span>
+              </li>
+              <li data-target="mech-3">
+                <span class="dot" aria-hidden="true"></span>
+                <span class="num">03</span>
+                <span class="label">PDF pronto pra sala</span>
+              </li>
+            </ul>
+          </aside>
+
+          <div class="mech-main">
+
+            <article class="mech-card" id="mech-1">
+              <span class="mech-num">01</span>
+              <h3>Geração especializada</h3>
+              <p>Produz questões alinhadas ao tópico, série, nível de dificuldade e habilidade BNCC que você escolher. Não é prompt genérico — é filtro curado.</p>
+              <div class="mech-visual">
+                <div class="vis-row">
+                  <span class="vis-label">Série</span>
+                  <span class="vis-chip">9º ano</span>
+                </div>
+                <div class="vis-row">
+                  <span class="vis-label">BNCC</span>
+                  <span class="vis-chip">EF09MA09</span>
+                </div>
+                <div class="vis-row">
+                  <span class="vis-label">Nível</span>
+                  <span class="vis-chip">Médio</span>
+                </div>
+                <div class="vis-row">
+                  <span class="vis-label">Tema</span>
+                  <span class="vis-chip">Equação 2º grau</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="mech-card" id="mech-2">
+              <span class="mech-num">02</span>
+              <h3>Validação matemática automática</h3>
+              <p>Cada resposta é verificada por um motor de cálculo antes de aparecer pra você. Gabarito nunca sai errado. Nunca corrija 40 provas com critério torto de novo.</p>
+              <div class="mech-visual flow">
+                <div class="flow-step">
+                  <div class="flow-box">Questão</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                  <div class="flow-box accent">Validador</div>
+                  <span class="flow-check">✓</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                  <div class="flow-box">Gabarito</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="mech-card" id="mech-3">
+              <span class="mech-num">03</span>
+              <h3>PDF pronto pra sala de aula</h3>
+              <p>Cabeçalho, numeração, espaço pra resposta do aluno, tudo formatado. Clique, baixa, xeroca. Nada de formatar fórmula no Word.</p>
+              <div class="mech-visual">
+                <div class="pdf-mock">
+                  <div class="pdf-head">
+                    <span class="pdf-school">Colégio • 9º ano A</span>
+                    <span class="pdf-date">Prova de Matemática</span>
+                  </div>
+                  <div class="pdf-q">
+                    <span class="pdf-qn">1.</span>
+                    <div class="pdf-qtext"></div>
+                  </div>
+                  <div class="pdf-q">
+                    <span class="pdf-qn">2.</span>
+                    <div class="pdf-qtext short"></div>
+                  </div>
+                  <div class="pdf-q">
+                    <span class="pdf-qn">3.</span>
+                    <div class="pdf-qtext"></div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FUNCIONALIDADES (o que você pode gerar) ===== -->
+    <section class="features" id="funcionalidades">
+      <div class="container">
+        <div class="features-head">
+          <span class="eyebrow">4 ferramentas, 1 plataforma</span>
+          <h2 class="h-serif-xl dark">Muito mais que prova. Tudo que você monta no Word, em poucos cliques.</h2>
+          <p class="features-intro">
+            Você escolhe a série, o tópico, o nível de dificuldade e o tipo de material. A IA gera, valida e formata. Você baixa em PDF ou envia direto pros alunos.
+          </p>
+        </div>
+
+        <div class="features-grid">
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+            </div>
+            <h3>Listas de exercícios</h3>
+            <p class="feature-desc">Listas temáticas por série, BNCC e nível. Você escolhe o tópico, a quantidade e o tipo — discursiva, múltipla escolha ou mista.</p>
+            <div class="feature-example">
+              <span class="ex-label">Exemplo</span>
+              <p class="ex-q">Resolva a equação <em>2x + 7 = 15</em> e determine o valor de <em>x</em>.</p>
+              <p class="ex-ans"><strong>Resposta:</strong> x = 4</p>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <h3>Provas completas</h3>
+            <p class="feature-desc">Prova formatada com cabeçalho, campo de nota e múltiplas versões (A/B/C) pra evitar cola. Gabarito separado.</p>
+            <div class="feature-example">
+              <span class="ex-label">Exemplo</span>
+              <p class="ex-q">Dada <em>f(x) = 3x − 2</em>, calcule <em>f(4)</em> e classifique a função.</p>
+              <p class="ex-ans"><strong>Resposta:</strong> f(4) = 10 · crescente</p>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <h3>Desafios e extras</h3>
+            <p class="feature-desc">Questões-desafio pra turma avançada, preparação de olimpíada ou vestibular. Nível ajustável de ENEM a OBM.</p>
+            <div class="feature-example">
+              <span class="ex-label">Exemplo</span>
+              <p class="ex-q">Num triângulo, as medianas medem 9, 12 e 15 cm. Calcule a área.</p>
+              <p class="ex-ans"><strong>Resposta:</strong> 72 cm² · com resolução passo a passo</p>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3>Explicações de conceito</h3>
+            <p class="feature-desc">Material didático pra introduzir um tema: definição, exemplos resolvidos e exercícios guiados na linguagem do aluno.</p>
+            <div class="feature-example">
+              <span class="ex-label">Exemplo</span>
+              <p class="ex-q">Razão é a comparação entre duas grandezas por divisão — 2 xícaras de farinha pra 1 de açúcar = razão 2:1.</p>
+              <p class="ex-ans"><strong>Inclui:</strong> 3 exemplos resolvidos + exercícios guiados</p>
+            </div>
+          </article>
+
+        </div>
+
+        <div class="features-foot">
+          <p>Todas com <strong>filtro por habilidade BNCC</strong>, 4 níveis de dificuldade e exportação em PDF.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COMPARATIVA ===== -->
+    <section class="compare">
+      <div class="container container-narrow">
+        <h2 class="h-serif-lg dark">Por que não resolve só com ChatGPT.</h2>
+
+        <div class="compare-table">
+          <div class="compare-head">
+            <div class="col">O que você pede</div>
+            <div class="col col-chatgpt">ChatGPT</div>
+            <div class="col col-promat">ProMat</div>
+          </div>
+
+          <div class="compare-row">
+            <div class="col"><strong>10 questões de equação do 2º grau</strong></div>
+            <div class="col col-chatgpt"><span class="x">✕</span> Texto corrido, fórmula quebrada, 2 respostas erradas</div>
+            <div class="col col-promat"><span class="check">✓</span> PDF formatado, gabarito validado, pronto pra imprimir</div>
+          </div>
+
+          <div class="compare-row">
+            <div class="col"><strong>Versões A, B, C da mesma prova</strong></div>
+            <div class="col col-chatgpt"><span class="x">✕</span> 3 conversas separadas, formatos diferentes</div>
+            <div class="col col-promat"><span class="check">✓</span> 3 versões em 1 clique, gabaritos separados</div>
+          </div>
+
+          <div class="compare-row">
+            <div class="col"><strong>Alinhado à BNCC 9º ano</strong></div>
+            <div class="col col-chatgpt"><span class="x">✕</span> "Acredito que esteja alinhado..."</div>
+            <div class="col col-promat"><span class="check">✓</span> Filtro oficial por habilidade BNCC</div>
+          </div>
+
+          <div class="compare-row">
+            <div class="col"><strong>Ajustar nível de dificuldade</strong></div>
+            <div class="col col-chatgpt"><span class="x">✕</span> Refazer o prompt 4 vezes</div>
+            <div class="col col-promat"><span class="check">✓</span> 4 níveis com um clique</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DEMO ===== -->
+    <section class="demo">
+      <div class="container container-narrow">
+        <h2 class="h-serif-xl">Veja funcionando. <em>45 segundos.</em></h2>
+
+        <div class="demo-video" aria-label="Demonstração do produto">
+          <div class="demo-placeholder">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" fill-opacity="0.15"/></svg>
+            <span>[demo placeholder]</span>
+          </div>
+        </div>
+
+        <div class="demo-cta">
+          <a href="#" class="cta-primary" data-cta="demo">
+            Testar grátis agora
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== BENEFITS ===== -->
+    <section class="benefits">
+      <div class="container container-narrow">
+        <h2 class="h-serif-xl dark">O que muda na sua semana.</h2>
+
+        <ul class="benefits-list">
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Recupera seus domingos. A lista que levava 3 horas, leva 2 minutos.</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Gera 3 versões diferentes da mesma prova com um clique — acabou a cola.</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Gabarito sai validado. Nunca mais corrigir prova com resposta errada no critério.</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Filtra por habilidade BNCC específica (EF09MA09, EM13MAT301, etc).</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>PDF formatado pra imprimir. Nunca mais formatar fórmula no Word.</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Ajusta dificuldade em 4 níveis: fundamental, médio, vestibular, olimpíada.</span>
+          </li>
+          <li>
+            <span class="b-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span>Seu banco de questões cresce automaticamente a cada prova gerada.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section class="faq" id="faq">
+      <div class="container container-narrow">
+        <h2 class="h-serif-lg dark">Perguntas diretas.</h2>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>
+              <span>IA não erra conta de matemática?</span>
+              <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p>O ChatGPT erra. Nossa IA não — cada questão passa por um validador matemático antes de sair. Se a conta não fechar, a questão não aparece pra você. Teste grátis e confira você mesmo.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Quanto custa?</span>
+              <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p>Plano grátis pra sempre, com limite mensal de listas. Sem cartão pra testar. Se você usar intensivamente e quiser ilimitado, tem plano premium — mas só se quiser. Você decide depois de usar.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Eu não sou bom com tecnologia. É complicado?</span>
+              <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p>Você escolhe o tópico, clica em gerar, baixa o PDF. Zero curva de aprendizado. Se você consegue abrir o Word, consegue usar isso — e muito mais rápido.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA FINAL ===== -->
+    <section class="cta-final" id="cta-final">
+      <div class="container container-narrow">
+        <h2 class="h-serif-giant">Sua próxima prova pode estar pronta em <em>2 minutos</em>.</h2>
+
+        <div class="cta-final-btn">
+          <a href="#" class="cta-primary" data-cta="final">
+            Testar grátis agora
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+          <p class="cta-micro">Sem cartão. Sem instalação. Cancele quando quiser (ou nunca — o plano grátis é pra sempre).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PS ===== -->
+    <section class="ps">
+      <div class="container container-tight">
+        <p class="ps-text">
+          <strong>PS:</strong> Cada semana que você adia, é mais um domingo trocado por Word. 4 horas por semana × 40 semanas letivas = 160 horas por ano. <strong>Vinte dias úteis de vida.</strong> Teste em 3 minutos. Se não economizar seu tempo, você volta pra sua rotina. Mas provavelmente não vai voltar.
+        </p>
+
+        <div class="ps-cta">
+          <a href="#" class="cta-primary" data-cta="ps">
+            Testar grátis agora
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <img src="assets/logo.png" alt="ProMat" />
+            <span>ProMat</span>
+          </div>
+          <div class="footer-links">
+            <a href="#">Política de privacidade</a>
+            <a href="#">Termos de uso</a>
+            <a href="mailto:contato@promat.app">contato@promat.app</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
