@@ -357,6 +357,58 @@ em {
 
 .hero-cta-wrap { margin-bottom: 80px; }
 
+/* ====== SLOTS DE IMAGEM (pra dropar screenshots do app) ====== */
+.hero-image-slot {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-dark);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+}
+.hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+.img-placeholder {
+  aspect-ratio: 5 / 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: linear-gradient(180deg, #111827, #0a0f1a);
+  border: 2px dashed rgba(20, 184, 166, 0.35);
+  border-radius: 12px;
+  color: var(--brand-500);
+  text-align: center;
+}
+.img-placeholder.light {
+  aspect-ratio: 5 / 3;
+  background: repeating-linear-gradient(45deg, var(--light-100), var(--light-100) 10px, var(--light-200) 10px, var(--light-200) 20px);
+  border: 2px dashed var(--brand-500);
+  color: var(--brand-700);
+}
+.ph-label {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ph-hint {
+  font-size: 0.75rem;
+  color: var(--text-dark-muted);
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+}
+.mech-image-slot { margin-top: 0; }
+.mech-image-slot .img-placeholder { border-radius: 10px; }
+
+/* Legado — mantém caso ainda reste referência */
 .hero-preview {
   max-width: 900px;
   margin: 0 auto;

@@ -45,12 +45,45 @@ Tipografia:
 - **Plus Jakarta Sans** — display / CTAs (mesma do app)
 - **Lora** — headlines serif emocionais (adicionada pra landing)
 
-## Como trocar assets
+## Onde colocar imagens do app
+
+A landing tem **4 spots marcados** pra você dropar screenshots. Cada spot mostra um placeholder com o nome e tamanho ideal — é só substituir por uma tag `<img>`.
+
+| Spot | Local                                   | Tamanho ideal | O que colocar                                             |
+|------|-----------------------------------------|---------------|-----------------------------------------------------------|
+| 1    | Hero (logo abaixo do CTA)               | 1600×960px    | Screenshot principal do app (tela de gerar ou resultado)  |
+| 2    | Mecanismo — Card 01 "Geração"           | 1200×720px    | Print do formulário (seletor de série/BNCC/nível)         |
+| 3    | Mecanismo — Card 02 "Validação"         | 1200×720px    | Print da questão gerada com gabarito                      |
+| 4    | Mecanismo — Card 03 "PDF"               | 1200×720px    | Print do PDF final ou preview da prova formatada          |
+
+**Como substituir um spot:**
+
+1. Salve a imagem em `landing/assets/` (ex: `hero-app.png`)
+2. No `index.html`, procure o comentário `<!-- 📸 SPOT X: ... -->` correspondente
+3. Troque a `<div class="img-placeholder">...</div>` por uma tag `<img>`:
+
+```html
+<!-- Antes -->
+<div class="hero-image-slot" aria-label="...">
+  <div class="img-placeholder">...</div>
+</div>
+
+<!-- Depois -->
+<div class="hero-image-slot">
+  <img src="assets/hero-app.png" alt="Tela do ProMat" class="hero-image" />
+</div>
+```
+
+**Dicas de conteúdo pras imagens:**
+- Prefira screenshots **limpos** do app (sem dados pessoais de usuários reais).
+- Use zoom suficiente pra o texto ficar legível (mesmo em mobile).
+- Pra o Spot 1 (hero), uma captura com **bordas arredondadas e sombra leve** fica melhor que screenshot cru do navegador.
+- Se não tiver screenshot ainda, deixe o placeholder — ele já mostra o layout final.
+
+## Outros assets
 
 1. **Logo** — substituir `assets/logo.png` (ou reapontar para `../frontend/assets/img/logoComFundo.png`).
-2. **Preview do hero** — editar `.preview-placeholder` em `index.html` → substituir por `<img>` ou `<video>` com screenshot real do app.
-3. **Demo (seção 8)** — trocar `.demo-placeholder` por `<video>` ou `<iframe>` (aspect 16:9 já reservado).
-4. **OG image** — adicionar `assets/og-image.png` (1200×630) pra link preview.
+2. **OG image** — adicionar `assets/og-image.png` (1200×630) pra link preview.
 
 ## CTA → Signup
 
