@@ -357,6 +357,23 @@ em {
 
 .hero-cta-wrap { margin-bottom: 80px; }
 
+/* ====== HERO FLOATING IMAGE (PNG transparente, sem frame) ====== */
+.hero-floating {
+  display: block;
+  max-width: 960px;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 30px 60px rgba(20, 184, 166, 0.18)) drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+  animation: heroFloat 6s ease-in-out infinite;
+}
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 /* ====== SLOTS DE IMAGEM (pra dropar screenshots do app) ====== */
 .hero-image-slot {
   max-width: 900px;
