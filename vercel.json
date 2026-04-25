@@ -9,12 +9,24 @@
     {
       "src": "frontend/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "landing/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "backend/server.js"
+    },
+    {
+      "src": "/landing/?$",
+      "dest": "landing/index.html"
+    },
+    {
+      "src": "/landing/(.*)",
+      "dest": "landing/$1"
     },
     {
       "src": "/(assets|css|js)/(.*)",
