@@ -28,5 +28,8 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code (artefatos locais do assistente)
+.claude/
+
 # Testes
 coverage/
