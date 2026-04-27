@@ -422,8 +422,11 @@ em {
   color: var(--text-dark-muted);
   font-family: 'SFMono-Regular', 'Consolas', monospace;
 }
-.mech-image-slot { margin-top: 0; }
-.mech-image-slot .img-placeholder { border-radius: 10px; }
+.mech-image-slot { 
+  margin: 0 -40px -40px -40px; 
+  margin-top: auto;
+}
+.mech-image-slot .img-placeholder { border-radius: 0; }
 .mech-image {
   display: block;
   width: 100%;
@@ -630,6 +633,9 @@ em {
   border-radius: 20px;
   scroll-margin-top: 120px;
   box-shadow: 0 4px 30px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .mech-num {
   display: inline-block;
@@ -1224,6 +1230,7 @@ em {
   .mech-sidebar li { flex-shrink: 0; padding: 10px 14px 10px 20px; }
   .mech-sidebar .num { display: none; }
   .mech-card { padding: 28px 24px; }
+  .mech-image-slot { margin: 0 -24px -28px -24px; }
   .mech-card h3 { font-size: 1.5rem; }
 
   .mech-visual.flow {
@@ -1235,40 +1242,51 @@ em {
   .compare-table { border: none; background: transparent; box-shadow: none; }
   .compare-head { display: none; }
   .compare-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     background: #fff;
     border: 1px solid var(--border-light);
-    border-radius: 12px;
-    margin-bottom: 16px;
-    border-top: 1px solid var(--border-light);
+    border-radius: 14px;
+    margin-bottom: 24px;
     overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   }
-  .compare-row .col { padding: 16px 20px; }
+  .compare-row .col { padding: 18px 16px; font-size: 0.875rem; }
   .compare-row .col:first-child {
+    grid-column: span 2;
     background: var(--light-200);
+    color: var(--text-light-primary);
     font-weight: 700;
+    border-bottom: 1px solid var(--border-light);
+    padding: 14px 20px;
+  }
+  .compare-row .col-chatgpt {
+    border-right: 1px solid var(--border-light);
+    color: #64748b;
+  }
+  .compare-row .col-promat {
+    background: var(--dark-800);
+    color: var(--text-dark-primary);
   }
   .compare-row .col-chatgpt::before {
     content: 'ChatGPT';
     display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-light-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .compare-row .col-promat::before {
     content: 'ProMat';
     display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     color: var(--brand-500);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   .footer-inner { flex-direction: column; text-align: center; }
@@ -1291,5 +1309,6 @@ em {
   .problem-body p { font-size: 0.9375rem; }
   .hero-badge { font-size: 0.75rem; }
   .mech-card { padding: 24px 20px; border-radius: 16px; }
+  .mech-image-slot { margin: 0 -20px -24px -20px; }
   .compare-row .col { padding: 14px 18px; font-size: 0.875rem; }
 }

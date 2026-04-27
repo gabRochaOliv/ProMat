@@ -63,9 +63,12 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ======================================
-// FRONTEND ESTÁTICO
+// FRONTEND & LANDING ESTÁTICO
 // ======================================
 const frontendPath = path.join(__dirname, '..', 'frontend');
+const landingPath = path.join(__dirname, '..', 'landing');
+
+app.use('/landing', express.static(landingPath));
 app.use(express.static(frontendPath));
 
 // ======================================
