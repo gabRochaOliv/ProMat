@@ -4,7 +4,7 @@
   'use strict';
 
   // Rota de signup do app. Ajuste conforme o deploy (ex.: https://promat.app/?ref=lp&action=signup)
-  const SIGNUP_URL = '../frontend/index.html?ref=lp&action=signup';
+  const SIGNUP_URL = '/?ref=lp&action=signup';
 
   /* ========== NAV STICKY — estado ao rolar ========== */
   const nav = document.getElementById('nav');
