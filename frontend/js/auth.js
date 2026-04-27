@@ -54,14 +54,19 @@ async function initAuth() {
   AuthState.sessao = session;
   AuthState.usuario = session?.user || null;
   AuthState.plano = session?.user ? 'free' : 'guest';
-  AuthState.carregando = false;
 
+  // Perfil e sidebar em paralelo: ambos resolvem antes do gate abrir.
+  // Tempo total = max(perfil, histórico) em vez de perfil + histórico.
   if (AuthState.usuario) {
-    await carregarPerfil(AuthState.usuario.id);
+    await Promise.all([
+      carregarPerfil(AuthState.usuario.id),
+      window.HistoryManager?.renderizarSidebar() ?? Promise.resolve(),
+    ]);
   }
 
+  AuthState.carregando = false;
   atualizarUIAuth();
-  _removerAuthGate();
+  _removerAuthGate(); // gate abre com plano + sidebar já prontos
 
   // Verifica se o usuário acabou de voltar de um checkout Cakto
   const urlParams = new URLSearchParams(window.location.search);
@@ -71,31 +76,35 @@ async function initAuth() {
   if ((checkoutSuccess || hasPendingFlag) && AuthState.usuario && AuthState.plano !== 'premium') {
     // Limpa a URL para não ficar poluída se for o caso
     if (checkoutSuccess) window.history.replaceState({}, document.title, window.location.pathname);
-    
+
     // Garante que o flag está setado para o polling funcionar corretamente
     localStorage.setItem('promat_checkout_pending', 'true');
-    
+
     if (typeof window.iniciarPollingPremium === 'function') {
       window.iniciarPollingPremium();
     }
   }
 
-  // Listener de mudanças de auth (login, logout, refresh de token)
-  sb.auth.onAuthStateChange(async (_event, session) => {
+  // Listener de mudanças de auth (login, logout, token refresh, etc.)
+  // INITIAL_SESSION é ignorado: já tratado pelo getSession() acima, evitando
+  // um segundo carregarPerfil() e um segundo renderizarSidebar() desnecessários.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'INITIAL_SESSION') return;
+
     const eraLogado = !!AuthState.usuario;
     AuthState.sessao = session;
     AuthState.usuario = session?.user || null;
     AuthState.plano = session?.user ? 'free' : 'guest';
-    
+
     if (AuthState.usuario) {
       await carregarPerfil(AuthState.usuario.id);
     }
-    
+
     atualizarUIAuth();
     if (window.HistoryManager) window.HistoryManager.renderizarSidebar();
 
     // Migração guest → usuário: só na primeira entrada (SIGNED_IN a partir de estado deslogado)
-    if (_event === 'SIGNED_IN' && !eraLogado && session?.user) {
+    if (event === 'SIGNED_IN' && !eraLogado && session?.user) {
       _migrarGeracoesGuestAposLogin(session);
     }
   });
