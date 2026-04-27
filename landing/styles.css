@@ -332,23 +332,28 @@ em {
 .hero-headline {
   font-family: var(--font-serif);
   font-weight: 500;
-  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   line-height: 1.1;
-  letter-spacing: -0.025em;
-  max-width: 820px;
-  margin: 0 auto 24px;
+  letter-spacing: -0.02em;
+  max-width: 1000px;
+  margin: 0 auto 32px;
   color: var(--text-dark-primary);
 }
 
 .hero-sub {
   font-family: var(--font-sans);
-  font-size: clamp(1rem, 1.4vw, 1.125rem);
-  line-height: 1.55;
+  font-size: clamp(0.75rem, 1.2vw, 0.875rem);
+  line-height: 1.6;
   color: var(--text-dark-secondary);
-  max-width: 620px;
-  margin: 0 auto 40px;
+  max-width: 800px;
+  margin: 0 auto 24px;
+  text-align: center;
 }
-.hero-sub strong { color: var(--text-dark-primary); font-weight: 500; }
+.hero-sub em {
+  color: var(--brand-500);
+  font-style: normal;
+  font-weight: 600;
+}
 
 .cursor {
   display: inline-block;
@@ -371,7 +376,7 @@ em {
   max-width: 960px;
   width: 100%;
   height: auto;
-  margin: 0 auto;
+  margin: 0 auto 32px;
   user-select: none;
   pointer-events: none;
   filter: drop-shadow(0 30px 60px rgba(20, 184, 166, 0.18)) drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
@@ -574,64 +579,31 @@ em {
   background: var(--light-100);
   color: var(--text-light-primary);
 }
-.mech-head { max-width: 860px; margin: 0 auto 72px; text-align: center; }
-.mech-head h2 { margin-bottom: 24px; }
-.mech-intro {
-  font-size: 1.125rem;
-  line-height: 1.65;
-  color: var(--text-light-secondary);
+.mech-title {
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  margin-bottom: 48px;
 }
-.mech-intro strong { color: var(--brand-700); }
+.mech-head { max-width: 860px; margin: 0 auto 72px; text-align: center; }
+.mech-head h2 { 
+  margin-bottom: 20px; 
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 500;
+  opacity: 0.9;
+}
+.mech-intro {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-light-secondary);
+  opacity: 0.8;
+}
+.mech-intro strong { color: var(--brand-600); }
 
 .mech-layout {
-  display: grid;
-  grid-template-columns: minmax(220px, 25%) 1fr;
-  gap: 64px;
-  align-items: start;
+  max-width: 800px;
+  margin: 0 auto;
 }
-
-.mech-sidebar { position: sticky; top: 120px; }
-.mech-sidebar ul { display: flex; flex-direction: column; gap: 4px; }
-.mech-sidebar li {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px 14px 24px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: var(--trans-500);
-  color: var(--text-light-muted);
-}
-.mech-sidebar .num {
-  font-family: var(--font-display);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--text-light-muted);
-  letter-spacing: 0.05em;
-  transition: var(--trans-500);
-}
-.mech-sidebar .label {
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: var(--trans-500);
-}
-.mech-sidebar .dot {
-  position: absolute;
-  left: 4px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--brand-600);
-  box-shadow: 0 0 12px var(--brand-500);
-  transition: var(--trans-500);
-  opacity: 0;
-}
-.mech-sidebar li.active { color: var(--text-light-primary); }
-.mech-sidebar li.active .label { font-weight: 700; color: var(--text-light-primary); }
-.mech-sidebar li.active .num { color: var(--brand-600); }
-.mech-sidebar li.active .dot { transform: translateY(-50%) scale(1); opacity: 1; }
 
 .mech-main { display: flex; flex-direction: column; gap: 80px; }
 .mech-card {
@@ -1167,7 +1139,12 @@ em {
 
 @media (max-width: 768px) {
   .nav { padding: 10px 12px; }
-  .nav-pill { display: none; }
+  .nav-pill { 
+    display: flex; 
+    padding: 4px;
+    background: rgba(10, 15, 26, 0.4);
+  }
+  .nav-pill a { padding: 6px 12px; font-size: 0.8rem; }
   .nav-logo span { display: none; }
   .nav-logo img { width: 28px; height: 28px; }
   .nav-cta { padding: 9px 14px; font-size: 0.8125rem; }
@@ -1177,10 +1154,10 @@ em {
 
   .hero { padding: 100px 0 56px; min-height: auto; }
   .hero-headline {
-    font-size: clamp(1.875rem, 8vw, 2.5rem);
-    line-height: 1.15;
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.1;
   }
-  .hero-sub { font-size: 1rem; margin-bottom: 32px; line-height: 1.55; }
+  .hero-sub { font-size: 0.75rem; margin-bottom: 24px; max-width: 100%; }
   .hero-badge {
     font-size: 0.8125rem;
     padding: 8px 14px;
@@ -1227,16 +1204,7 @@ em {
   .ps { padding: 56px 0 80px; }
   .transition { padding: 72px 0; }
 
-  .mech-layout { grid-template-columns: 1fr; gap: 32px; }
-  .mech-sidebar {
-    position: static;
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  .mech-sidebar ul { flex-direction: row; gap: 8px; }
-  .mech-sidebar li { flex-shrink: 0; padding: 10px 14px 10px 20px; }
-  .mech-sidebar .num { display: none; }
+  .mech-layout { max-width: 100%; }
   .mech-card { padding: 28px 24px; }
   .mech-image-slot { margin: 0 -24px -28px -24px; }
   .mech-card h3 { font-size: 1.5rem; }
