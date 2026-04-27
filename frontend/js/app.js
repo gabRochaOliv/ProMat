@@ -219,6 +219,9 @@ function iniciarNovaConversa() {
 }
 
 function abrirFormulario(tipo) {
+  // Auth ainda não resolveu — o overlay está ativo, mas por segurança ignoramos o clique
+  if (window.Auth?.estado?.carregando) return;
+
   // Bloqueio de funcionalidades Premium para Plano Grátis
   if (tipo !== 'exercicios') {
     if (window.Auth && window.Auth.estado.plano !== 'premium') {

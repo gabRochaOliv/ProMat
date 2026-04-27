@@ -25,6 +25,19 @@ function getAccessToken() {
 }
 
 // ============================================================
+// AUTH GATE — remove o overlay de bloqueio após auth resolver
+// ============================================================
+function _removerAuthGate() {
+  const gate = document.getElementById('auth-gate');
+  if (!gate || gate.classList.contains('oculto')) return;
+  gate.classList.add('saindo');
+  // Remove do layout após a transição de fade-out (0.25s)
+  const limpar = () => gate.classList.add('oculto');
+  gate.addEventListener('transitionend', limpar, { once: true });
+  setTimeout(limpar, 350); // fallback caso transitionend não dispare
+}
+
+// ============================================================
 // INICIALIZAÇÃO — detecta sessão persistida
 // ============================================================
 async function initAuth() {
@@ -32,6 +45,7 @@ async function initAuth() {
   if (!sb) {
     AuthState.carregando = false;
     atualizarUIAuth();
+    _removerAuthGate();
     return;
   }
 
@@ -47,6 +61,7 @@ async function initAuth() {
   }
 
   atualizarUIAuth();
+  _removerAuthGate();
 
   // Verifica se o usuário acabou de voltar de um checkout Cakto
   const urlParams = new URLSearchParams(window.location.search);
