@@ -136,6 +136,13 @@ async function carregarPerfil(userId) {
       }
     }
     
+    // EVENTO PIXEL: Complete Registration (disparado uma vez)
+    const crKey = `cr_fired_${userId}`;
+    if (!localStorage.getItem(crKey)) {
+      window.fbPixel?.completeRegistration();
+      localStorage.setItem(crKey, 'true');
+    }
+
     // Força a atualização da UI caso o perfil tenha sido carregado tardiamente
     if (planoAnterior !== data.plan) {
       atualizarUIAuth();
@@ -340,6 +347,7 @@ async function submitAuth() {
       mostrarToast('Bem-vindo ao ProMat!', 'sucesso');
     } else {
       await authCadastro(email, password, name);
+      window.fbPixel?.lead(); // EVENTO PIXEL: Lead gerado
       errorEl.style.color = '#10b981';
       errorEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar.';
     }

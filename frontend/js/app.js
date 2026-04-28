@@ -406,6 +406,9 @@ async function submeterFormulario() {
     estado.dadosAtuais = res.dados;
     estado.tipoAtual = tipo;
 
+    // EVENTO PIXEL: Prova/Conteúdo Gerado
+    window.fbPixel?.provaGerada({ tipo, serie, tema, nivel });
+
     // ── REGISTRAR GERAÇÃO GUEST ─────────────────────────────
     if (window.GuestMode) window.GuestMode.registrarGeracao();
     // ────────────────────────────────────────────────────────
@@ -1230,6 +1233,9 @@ window.mostrarModalUpgrade = function (mensagem) {
   if (overlay && msgEl) {
     msgEl.textContent = mensagem || 'Você atingiu seu limite gratuito. Desbloqueie gerações ilimitadas e ferramentas profissionais.';
     overlay.classList.add('ativo');
+
+    // EVENTO PIXEL: Visualizou planos/upgrade
+    window.fbPixel?.viewContent('Upgrade', 97);
   }
 };
 
@@ -1244,6 +1250,9 @@ window.iniciarCheckoutPremium = function (plano) {
 
   // Fecha modal de upgrade atual
   document.getElementById('modal-upgrade-overlay').classList.remove('ativo');
+
+  // EVENTO PIXEL: Clicou em assinar/upgrade
+  window.fbPixel?.upgradeClicado(window.Auth?.estado?.plano || 'guest');
 
   // Redireciona o usuário (em nova aba)
   window.open(checkoutUrl, '_blank');

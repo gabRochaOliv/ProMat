@@ -80,6 +80,9 @@ function executarImpressao(incluirGabarito) {
     }
   }
 
+  // EVENTO PIXEL: PDF Baixado
+  window.fbPixel?.pdfBaixado(window.estado?.tipoAtual || 'desconhecido');
+
   fecharModalImpressao();
   setTimeout(() => window.print(), 280);
 }
