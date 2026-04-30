@@ -127,6 +127,7 @@ app.post('/api/feedback', (req, res) => {
   const postData = JSON.stringify({
     _subject: 'Novo Feedback do ProMat!',
     _replyto: usuario || 'sem_email@visitante.com',
+    _captcha: 'false',
     Usuario: usuario || 'Visitante',
     Mensagem: mensagem
   });
