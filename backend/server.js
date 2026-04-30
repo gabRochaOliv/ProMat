@@ -121,7 +121,7 @@ app.post('/api/feedback', (req, res) => {
   const { mensagem, usuario } = req.body;
   if (!mensagem) return res.status(400).json({ erro: 'A mensagem é obrigatória' });
 
-  const emailDestino = process.env.FEEDBACK_EMAIL || 'seu_email_aqui@gmail.com';
+  const emailDestino = process.env.FEEDBACK_EMAIL || 'bielrocha200345@gmail.com';
   const https = require('https');
 
   const postData = JSON.stringify({
