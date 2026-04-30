@@ -117,61 +117,19 @@ app.get('/api/config', (req, res) => {
 // ======================================
 // FEEDBACK
 // ======================================
-app.post('/api/feedback', (req, res) => {
+app.post('/api/feedback', async (req, res) => {
   const { mensagem, usuario } = req.body;
   if (!mensagem) return res.status(400).json({ erro: 'A mensagem é obrigatória' });
 
-  const emailDestino = process.env.FEEDBACK_EMAIL || 'bielrocha200345@gmail.com';
-  const https = require('https');
+  const { salvarFeedback } = require('./services/supabaseService');
 
-  const postData = JSON.stringify({
-    _subject: 'Novo Feedback do ProMat!',
-    _replyto: usuario || 'sem_email@visitante.com',
-    _captcha: 'false',
-    Usuario: usuario || 'Visitante',
-    Mensagem: mensagem
-  });
-
-  const options = {
-    hostname: 'formsubmit.co',
-    port: 443,
-    path: `/ajax/${emailDestino}`,
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Referer': req.headers.origin || 'https://promat.com.br',
-      'User-Agent': 'Mozilla/5.0',
-      'Content-Length': Buffer.byteLength(postData)
-    }
-  };
-
-  const formReq = https.request(options, (formRes) => {
-    let body = '';
-    formRes.on('data', chunk => body += chunk);
-    formRes.on('end', () => {
-      try {
-        const json = JSON.parse(body);
-        // FormSubmit retorna json.success = "false" se precisar de ativação
-        if (json.success === 'false') {
-          console.warn('[Feedback] FormSubmit requer ativação. Verifique o email:', emailDestino);
-          // Retornamos sucesso pro frontend para não frustrar o usuário, 
-          // mas o dono precisa confirmar o email.
-        }
-        res.json({ sucesso: true, aviso: json.message });
-      } catch (e) {
-        res.json({ sucesso: true }); // Ignora erro de parse
-      }
-    });
-  });
-
-  formReq.on('error', (e) => {
-    console.error('[Feedback] Erro ao enviar:', e.message);
-    res.status(500).json({ erro: 'Não foi possível enviar o feedback.' });
-  });
-
-  formReq.write(postData);
-  formReq.end();
+  try {
+    await salvarFeedback(usuario, mensagem);
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error('[Feedback] Erro ao salvar no banco:', err.message);
+    res.status(500).json({ erro: 'Não foi possível salvar o feedback.' });
+  }
 });
 
 // ======================================

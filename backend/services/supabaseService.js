@@ -226,6 +226,22 @@ async function atualizarPlanoPorEmail(email, plano = 'premium') {
   }
 }
 
+/**
+ * Salva um feedback no banco de dados.
+ */
+async function salvarFeedback(usuario, mensagem) {
+  if (!supabaseAdmin) throw new Error('Supabase não configurado');
+
+  const { data, error } = await supabaseAdmin
+    .from('feedbacks')
+    .insert([{ usuario: usuario || 'Visitante', mensagem }]);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 module.exports = { 
   verificarToken, 
   salvarGeracao, 
@@ -234,5 +250,6 @@ module.exports = {
   verificarUsoDoisDias,
   verificarUsoPremium, 
   verificarUsoGuest,
-  atualizarPlanoPorEmail
+  atualizarPlanoPorEmail,
+  salvarFeedback
 };
