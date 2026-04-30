@@ -41,12 +41,12 @@ async function apiFetch(endpoint, body) {
   const data = await response.json();
 
   if (!response.ok) {
-    if (data.erro === 'limite_excedido') {
+    if (data.erro === 'limite_excedido' || data.erro === 'recurso_premium') {
       if (window.mostrarModalUpgrade) {
         window.mostrarModalUpgrade(data.mensagem);
       }
       const erro = new Error(data.mensagem);
-      erro.codigo = 'limite_excedido';
+      erro.codigo = data.erro;
       throw erro;
     }
     const mensagem = data.erro || `Erro HTTP ${response.status}`;
@@ -109,4 +109,11 @@ async function obterHistoricoCloud() {
   if (!response.ok) return [];
   const json = await response.json();
   return json.itens || [];
+}
+
+/**
+ * Envia o feedback do usuário de forma silenciosa para o backend
+ */
+async function enviarFeedbackAPI(mensagem, usuario) {
+  return await apiFetch('/feedback', { mensagem, usuario });
 }

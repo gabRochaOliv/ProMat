@@ -17,7 +17,8 @@ const {
   verificarToken, 
   salvarGeracao,
   obterPerfilUsuario,
-  verificarUsoDiario,
+  verificarUsoDoisDias,
+  verificarUsoPremium,
   verificarUsoGuest
 } = require('../services/supabaseService');
 
@@ -53,17 +54,14 @@ function sanitizeText(text) {
   return text.trim().substring(0, 200);
 }
 
-function sanitizeText(text) {
-  if (!text || typeof text !== 'string') return '';
-  return text.trim().substring(0, 200);
-}
-
 // ======================================
 // MIDDLEWARE DE LIMITES (GUEST, FREE, PREMIUM)
 // ======================================
 async function checkUsageLimits(req, res, next) {
   const token = extractToken(req);
   const sessionId = extractSessionId(req);
+  const toolType = req.path.replace('/', ''); // ex: 'prova', 'exercicios', 'atividade-extra', 'explicacao'
+  const isPremiumFeature = ['prova', 'atividade-extra', 'explicacao'].includes(toolType);
   
   // Usuário Logado
   if (token) {
@@ -76,26 +74,31 @@ async function checkUsageLimits(req, res, next) {
     const perfil = await obterPerfilUsuario(usuario.id);
     req.plano = perfil.plan;
     
-    // Bloqueio de funcionalidades Premium (Prova, Desafio, Explicação)
-    const isPremiumFeature = ['/prova', '/atividade-extra', '/explicacao'].some(p => req.path.includes(p));
-    if (isPremiumFeature && req.plano !== 'premium') {
-      return res.status(403).json({ 
-        erro: 'recurso_premium', 
-        mensagem: 'As funcionalidades de Prova, Desafio e Explicação são exclusivas para o Plano Premium.' 
-      });
-    }
-
     if (perfil.plan === 'premium') return next(); // Liberado ilimitado
     
-    const usoHoje = await verificarUsoDiario(usuario.id);
-    if (usoHoje >= 3) {
+    // Para plano Free:
+    // Verifica limite lifetime de ferramentas premium
+    if (isPremiumFeature) {
+      const usosDaFerramenta = await verificarUsoPremium(usuario.id, toolType);
+      if (usosDaFerramenta >= 1) {
+        return res.status(403).json({ 
+          erro: 'recurso_premium', 
+          mensagem: 'Você já usou seu teste gratuito desta ferramenta. Assine o Premium para uso ilimitado.' 
+        });
+      }
+    }
+
+    // Verifica limite geral (3 gerações a cada 2 dias)
+    const uso2Dias = await verificarUsoDoisDias(usuario.id);
+    if (uso2Dias >= 3) {
       return res.status(403).json({ 
         erro: 'limite_excedido', 
         plano: 'free', 
         limite: 3,
-        mensagem: 'Você atingiu o limite de 3 gerações por dia no plano Free.'
+        mensagem: 'Você atingiu o limite de 3 gerações em 48 horas no plano Free.'
       });
     }
+
     return next();
   }
   
@@ -104,22 +107,14 @@ async function checkUsageLimits(req, res, next) {
     return res.status(401).json({ erro: 'Autenticação ou Session ID obrigatório.' });
   }
 
-  // Bloqueio de funcionalidades Premium para Visitantes
-  const isPremiumFeature = ['/prova', '/atividade-extra', '/explicacao'].some(p => req.path.includes(p));
-  if (isPremiumFeature) {
-    return res.status(403).json({ 
-      erro: 'recurso_premium', 
-      mensagem: 'As funcionalidades de Prova, Desafio e Explicação são exclusivas para o Plano Premium.' 
-    });
-  }
-  
+  // Visitante pode gerar apenas 1 conteúdo no TOTAL, de qualquer ferramenta.
   const usoTotal = await verificarUsoGuest(sessionId);
   if (usoTotal >= 1) {
     return res.status(403).json({
       erro: 'limite_excedido',
       plano: 'guest',
       limite: 1,
-      mensagem: 'Visitantes podem gerar apenas 1 conteúdo. Crie sua conta gratuita para continuar!'
+      mensagem: 'Visitantes podem testar apenas 1 ferramenta gratuitamente. Crie sua conta para continuar testando!'
     });
   }
   

@@ -139,22 +139,38 @@ async function obterPerfilUsuario(userId) {
 }
 
 /**
- * Conta quantas gerações o usuário fez HOJE (desde meia-noite)
+ * Conta quantas gerações o usuário fez nas últimas 48 horas (2 dias)
  */
-async function verificarUsoDiario(userId) {
+async function verificarUsoDoisDias(userId) {
   if (!supabaseAdmin || !userId) return 0;
   
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const hojeISO = hoje.toISOString();
+  const doisDiasAtras = new Date();
+  doisDiasAtras.setDate(doisDiasAtras.getDate() - 2);
+  const dataISO = doisDiasAtras.toISOString();
 
   const { count, error } = await supabaseAdmin
     .from('generations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .gte('created_at', hojeISO);
+    .gte('created_at', dataISO);
     
-  if (error) console.error('[Supabase] Erro ao contar uso diário:', error.message);
+  if (error) console.error('[Supabase] Erro ao contar uso 2 dias:', error.message);
+  return count || 0;
+}
+
+/**
+ * Conta quantas vezes o usuário usou uma ferramenta premium específica (lifetime)
+ */
+async function verificarUsoPremium(userId, tipo) {
+  if (!supabaseAdmin || !userId) return 0;
+  
+  const { count, error } = await supabaseAdmin
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('type', tipo);
+    
+  if (error) console.error(`[Supabase] Erro ao contar uso premium (${tipo}):`, error.message);
   return count || 0;
 }
 
@@ -215,7 +231,8 @@ module.exports = {
   salvarGeracao, 
   migrarGeracoesGuest, 
   obterPerfilUsuario, 
-  verificarUsoDiario, 
+  verificarUsoDoisDias,
+  verificarUsoPremium, 
   verificarUsoGuest,
   atualizarPlanoPorEmail
 };

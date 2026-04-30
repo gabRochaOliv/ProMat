@@ -17,6 +17,7 @@ const AuthState = {
   nome: '',             // nome completo do usuário
   plano: 'guest',       // guest | free | premium
   carregando: true,     // true enquanto verifica sessão inicial
+  usouFerramenta: {},   // Rastreia uso de cada ferramenta (para o limite 1 free)
 };
 
 // Retorna o access_token atual (para enviar nas chamadas à API)
@@ -143,6 +144,23 @@ async function carregarPerfil(userId) {
       localStorage.setItem(crKey, 'true');
     }
 
+    // Busca uso de ferramentas premium para usuários do plano free
+    if (data.plan === 'free') {
+      const { data: genData } = await sb.from('generations')
+        .select('type')
+        .eq('user_id', userId)
+        .in('type', ['prova', 'atividade-extra', 'explicacao']);
+        
+      const usedTypes = new Set(genData?.map(g => g.type) || []);
+      AuthState.usouFerramenta = {
+        'prova': usedTypes.has('prova'),
+        'atividade-extra': usedTypes.has('atividade-extra'),
+        'explicacao': usedTypes.has('explicacao'),
+      };
+    } else {
+      AuthState.usouFerramenta = {};
+    }
+
     // Força a atualização da UI caso o perfil tenha sido carregado tardiamente
     if (planoAnterior !== data.plan) {
       atualizarUIAuth();
@@ -244,16 +262,45 @@ function atualizarUIAuth() {
 
   // Controle visual dos cards bloqueados (Premium Only)
   const cardsPremium = document.querySelectorAll('.action-card.premium-only');
-  const isPremium = AuthState.plano === 'premium';
+  const planoAtual = AuthState.plano;
 
   cardsPremium.forEach(card => {
+    const onclickStr = card.getAttribute('onclick') || '';
+    let toolType = '';
+    if (onclickStr.includes('prova')) toolType = 'prova';
+    else if (onclickStr.includes('atividade-extra')) toolType = 'atividade-extra';
+    else if (onclickStr.includes('explicacao')) toolType = 'explicacao';
+
     const tag = card.querySelector('.card-premium-tag');
-    if (isPremium) {
+    if (planoAtual === 'premium') {
+      card.classList.remove('premium-locked');
+      if (tag) tag.style.display = 'none';
+    } else if (planoAtual === 'guest') {
       card.classList.remove('premium-locked');
       if (tag) tag.style.display = 'none';
     } else {
-      card.classList.add('premium-locked');
-      if (tag) tag.style.display = 'block';
+      // Plano Free
+      if (toolType && AuthState.usouFerramenta && AuthState.usouFerramenta[toolType]) {
+        // Já utilizou a chance grátis, volta a bloquear visualmente
+        card.classList.add('premium-locked');
+        if (tag) {
+          tag.style.display = 'block';
+          tag.textContent = 'PREMIUM';
+          tag.style.background = ''; // Reseta para estilo CSS default
+          tag.style.color = '';
+          tag.style.borderColor = '';
+        }
+      } else {
+        // Ainda tem a chance grátis
+        card.classList.remove('premium-locked');
+        if (tag) {
+          tag.style.display = 'block';
+          tag.textContent = '1 USO GRÁTIS';
+          tag.style.background = 'rgba(16, 185, 129, 0.1)';
+          tag.style.color = '#10b981';
+          tag.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+        }
+      }
     }
   });
 

@@ -633,6 +633,42 @@
     </div>
   </div>
 
+  <!-- ===================== FEEDBACK FLUTUANTE ===================== -->
+  <div class="feedback-container">
+    <div class="feedback-tooltip" id="feedback-tooltip">
+      Nos dê seu feedback!
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="feedback-arrow">
+        <path d="M12 22C12 22 18 10 22 4C22 4 15 7 6 7C1.5 7 2 12 2 12C2 12 7 12 12 22Z" fill="currentColor"/>
+      </svg>
+    </div>
+    <button class="floating-feedback" onclick="abrirModalFeedback()" title="Enviar Feedback">
+      <i class="ph-fill ph-chat-circle-dots"></i>
+      <span>Feedback</span>
+    </button>
+  </div>
+
+  <!-- Modal Feedback -->
+  <div class="overlay" id="modal-feedback-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Enviar Feedback</h2>
+        <button class="btn-fechar" onclick="fecharModalFeedback()"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 14px;">
+          Sua opinião é muito importante! Encontrou um bug ou tem uma sugestão? Conta pra gente:
+        </p>
+        <div class="form-group">
+          <textarea id="feedback-texto" rows="4" placeholder="Digite seu feedback aqui..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModalFeedback()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-enviar-feedback" onclick="enviarFeedback()">Enviar Feedback</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== SCRIPTS ===================== -->
   <script src="js/pixel.js"></script>
   <script src="js/api.js"></script>

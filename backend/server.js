@@ -115,6 +115,43 @@ app.get('/api/config', (req, res) => {
 });
 
 // ======================================
+// FEEDBACK
+// ======================================
+app.post('/api/feedback', async (req, res) => {
+  const { mensagem, usuario } = req.body;
+  if (!mensagem) return res.status(400).json({ erro: 'A mensagem é obrigatória' });
+
+  const emailDestino = process.env.FEEDBACK_EMAIL || 'seu_email_aqui@gmail.com';
+
+  try {
+    // Usamos o FormSubmit para enviar o email sem precisar de SMTP.
+    // Isso esconde o seu email do frontend e não requer API keys.
+    const response = await fetch(`https://formsubmit.co/ajax/${emailDestino}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: 'Novo Feedback do ProMat!',
+        _replyto: usuario || 'sem_email@visitante.com',
+        Usuario: usuario || 'Visitante',
+        Mensagem: mensagem
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Falha ao enviar pelo FormSubmit');
+    }
+
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error('[Feedback] Erro ao enviar:', err.message);
+    res.status(500).json({ erro: 'Não foi possível enviar o feedback.' });
+  }
+});
+
+// ======================================
 // ERRO 404
 // ======================================
 app.use('/api/*', (req, res) => {

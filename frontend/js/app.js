@@ -222,17 +222,19 @@ function abrirFormulario(tipo) {
   // Auth ainda não resolveu — o overlay está ativo, mas por segurança ignoramos o clique
   if (window.Auth?.estado?.carregando) return;
 
-  // Bloqueio de funcionalidades Premium para Plano Grátis
-  if (tipo !== 'exercicios') {
-    if (window.Auth && window.Auth.estado.plano !== 'premium') {
+  // Bloqueio imediato se o usuário Free já gastou a sua chance na funcionalidade
+  if (tipo !== 'exercicios' && window.Auth?.estado?.plano === 'free') {
+    if (window.Auth.estado.usouFerramenta && window.Auth.estado.usouFerramenta[tipo]) {
       if (window.mostrarModalUpgrade) {
-        mostrarModalUpgrade('As funcionalidades de Prova, Desafio e Explicação de Tema são exclusivas para assinantes do Plano Premium.');
+        mostrarModalUpgrade('Você já utilizou o seu teste gratuito desta funcionalidade. Assine o Premium para ter acesso ilimitado a todas as ferramentas!');
       } else {
         alert('Esta funcionalidade é exclusiva para o Plano Premium.');
       }
       return;
     }
   }
+
+  // O bloqueio da API garantirá segurança, mas este bloqueio visual previne que abram o formulário à toa.
 
   estado.tipoAtual = tipo;
 
@@ -408,6 +410,18 @@ async function submeterFormulario() {
 
     // EVENTO PIXEL: Prova/Conteúdo Gerado
     window.fbPixel?.provaGerada({ tipo, serie, tema, nivel });
+
+    // Atualiza estado local se o usuário free gastou sua chance (para remover a tag verde sem precisar de F5)
+    if (tipo !== 'exercicios' && window.Auth?.estado?.plano === 'free') {
+      if (window.Auth.estado.usouFerramenta) {
+        window.Auth.estado.usouFerramenta[tipo] = true;
+        if (typeof window.Auth.atualizarUIAuth === 'function') {
+           window.Auth.atualizarUIAuth();
+        } else if (typeof atualizarUIAuth === 'function') {
+           atualizarUIAuth(); // chama direto se estiver no escopo global
+        }
+      }
+    }
 
     // ── REGISTRAR GERAÇÃO GUEST ─────────────────────────────
     if (window.GuestMode) window.GuestMode.registrarGeracao();
@@ -812,7 +826,14 @@ function renderizarDesafioDOM(dados, container) {
 }
 
 function toggleGabarito() {
-  document.getElementById('gabarito-panel').classList.toggle('ativo');
+  const panel = document.getElementById('gabarito-panel');
+  panel.classList.toggle('ativo');
+  
+  if (panel.classList.contains('ativo') && window.innerWidth <= 768) {
+    setTimeout(() => {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
 }
 
 // ============================================================
@@ -1387,3 +1408,59 @@ window.fecharCelebracaoPremium = function () {
     overlay.classList.remove('ativo');
   }
 };
+
+// ============================================================
+// FEEDBACK
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Mostra o balão de dica caso nunca tenha sido clicado
+  if (!localStorage.getItem('promat_feedback_clicked')) {
+    const tooltip = document.getElementById('feedback-tooltip');
+    if (tooltip) tooltip.style.display = 'block';
+  }
+});
+
+function abrirModalFeedback() {
+  const tooltip = document.getElementById('feedback-tooltip');
+  if (tooltip) {
+    tooltip.style.display = 'none'; // Esconde na hora
+  }
+  localStorage.setItem('promat_feedback_clicked', 'true'); // Nunca mais mostra a flecha
+  
+  document.getElementById('modal-feedback-overlay').classList.add('ativo');
+  setTimeout(() => document.getElementById('feedback-texto').focus(), 100);
+}
+
+function fecharModalFeedback() {
+  document.getElementById('modal-feedback-overlay').classList.remove('ativo');
+}
+
+async function enviarFeedback() {
+  const textarea = document.getElementById('feedback-texto');
+  const texto = textarea.value.trim();
+  
+  if (!texto) {
+    mostrarToast('Por favor, escreva algo antes de enviar.', 'aviso');
+    textarea.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar-feedback');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const usuarioStr = window.Auth?.estado?.usuario ? window.Auth.estado.usuario.email : null;
+    await enviarFeedbackAPI(texto, usuarioStr);
+    
+    fecharModalFeedback();
+    mostrarToast('Feedback enviado com sucesso! Muito obrigado.', 'sucesso');
+    textarea.value = ''; // Limpa o texto
+  } catch (err) {
+    mostrarToast('Erro ao enviar feedback. Tente novamente.', 'erro');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar Feedback';
+  }
+}
