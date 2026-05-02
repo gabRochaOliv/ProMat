@@ -42,74 +42,103 @@ function _removerAuthGate() {
 // INICIALIZAÇÃO — detecta sessão persistida
 // ============================================================
 async function initAuth() {
-  const sb = window.SupabaseClient.get();
-  if (!sb) {
-    AuthState.carregando = false;
-    atualizarUIAuth();
-    _removerAuthGate();
-    return;
-  }
-
-  // Recupera sessão do storage (persiste entre reloads)
-  const { data: { session } } = await sb.auth.getSession();
-  AuthState.sessao = session;
-  AuthState.usuario = session?.user || null;
-  AuthState.plano = session?.user ? 'free' : 'guest';
-
-  // Perfil e sidebar em paralelo: ambos resolvem antes do gate abrir.
-  // Tempo total = max(perfil, histórico) em vez de perfil + histórico.
-  if (AuthState.usuario) {
-    await Promise.all([
-      carregarPerfil(AuthState.usuario.id),
-      window.HistoryManager?.renderizarSidebar() ?? Promise.resolve(),
-    ]);
-  }
-
-  AuthState.carregando = false;
-  atualizarUIAuth();
-  _removerAuthGate(); // gate abre com plano + sidebar já prontos
-
-  // Verifica se o usuário acabou de voltar de um checkout Cakto
-  const urlParams = new URLSearchParams(window.location.search);
-  const checkoutSuccess = urlParams.get('checkout') === 'success';
-  const hasPendingFlag = localStorage.getItem('promat_checkout_pending') === 'true';
-
-  if ((checkoutSuccess || hasPendingFlag) && AuthState.usuario && AuthState.plano !== 'premium') {
-    // Limpa a URL para não ficar poluída se for o caso
-    if (checkoutSuccess) window.history.replaceState({}, document.title, window.location.pathname);
-
-    // Garante que o flag está setado para o polling funcionar corretamente
-    localStorage.setItem('promat_checkout_pending', 'true');
-
-    if (typeof window.iniciarPollingPremium === 'function') {
-      window.iniciarPollingPremium();
+  try {
+    const sb = window.SupabaseClient.get();
+    if (!sb) {
+      // Sem Supabase: redireciona para a landing (não há modo guest mais)
+      AuthState.carregando = false;
+      _redirecionarParaLanding();
+      return;
     }
-  }
 
-  // Listener de mudanças de auth (login, logout, token refresh, etc.)
-  // INITIAL_SESSION é ignorado: já tratado pelo getSession() acima, evitando
-  // um segundo carregarPerfil() e um segundo renderizarSidebar() desnecessários.
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'INITIAL_SESSION') return;
-
-    const eraLogado = !!AuthState.usuario;
+    // Recupera sessão do storage (persiste entre reloads)
+    const { data: { session } } = await sb.auth.getSession();
     AuthState.sessao = session;
     AuthState.usuario = session?.user || null;
     AuthState.plano = session?.user ? 'free' : 'guest';
 
+    // NOVO: se não há sessão, redireciona para a landing
+    if (!session) {
+      AuthState.carregando = false;
+      _redirecionarParaLanding();
+      return;
+    }
+
+    // Perfil e sidebar em paralelo: ambos resolvem antes do gate abrir.
     if (AuthState.usuario) {
-      await carregarPerfil(AuthState.usuario.id);
+      try {
+        await Promise.all([
+          carregarPerfil(AuthState.usuario.id),
+          window.HistoryManager?.renderizarSidebar() ?? Promise.resolve(),
+        ]);
+      } catch (e) {
+        console.warn('[Auth] Falha ao carregar perfil/sidebar inicial:', e);
+      }
     }
 
+    AuthState.carregando = false;
     atualizarUIAuth();
-    if (window.HistoryManager) window.HistoryManager.renderizarSidebar();
 
-    // Migração guest → usuário: só na primeira entrada (SIGNED_IN a partir de estado deslogado)
-    if (event === 'SIGNED_IN' && !eraLogado && session?.user) {
-      _migrarGeracoesGuestAposLogin(session);
+    // Verifica se o usuário acabou de voltar de um checkout Cakto
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkoutSuccess = urlParams.get('checkout') === 'success';
+    const hasPendingFlag = localStorage.getItem('promat_checkout_pending') === 'true';
+
+    if ((checkoutSuccess || hasPendingFlag) && AuthState.usuario && AuthState.plano !== 'premium') {
+      if (checkoutSuccess) window.history.replaceState({}, document.title, window.location.pathname);
+      localStorage.setItem('promat_checkout_pending', 'true');
+      if (typeof window.iniciarPollingPremium === 'function') {
+        window.iniciarPollingPremium();
+      }
     }
-  });
+
+    // Listener de mudanças de auth
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'INITIAL_SESSION') return;
+
+      const eraLogado = !!AuthState.usuario;
+      AuthState.sessao = session;
+      AuthState.usuario = session?.user || null;
+      AuthState.plano = session?.user ? 'free' : 'guest';
+
+      if (event === 'SIGNED_OUT' || !session) {
+        _redirecionarParaLanding();
+        return;
+      }
+
+      if (AuthState.usuario) {
+        await carregarPerfil(AuthState.usuario.id);
+      }
+
+      atualizarUIAuth();
+      if (window.HistoryManager) window.HistoryManager.renderizarSidebar();
+
+      if (event === 'SIGNED_IN' && !eraLogado && session?.user) {
+        _migrarGeracoesGuestAposLogin(session);
+      }
+    });
+  } catch (err) {
+    console.error('[Auth] Erro crítico no initAuth:', err);
+  } finally {
+    _removerAuthGate();
+  }
 }
+
+/**
+ * Redireciona o usuário para a página de auth.
+ * Preserva a URL atual para poder voltar após login (opcional).
+ */
+function _redirecionarParaLanding() {
+  // Evita loop
+  const path = window.location.pathname;
+  if (path.includes('/auth') || path.includes('/landing')) return;
+  
+  const temAppLayout = !!document.getElementById('view-home');
+  if (!temAppLayout) return; // segurança: não redireciona se não for o app
+
+  window.location.href = '/auth/?tab=login';
+}
+
 
 /**
  * Busca o plano do usuário no Supabase e atualiza o estado
@@ -295,7 +324,7 @@ function atualizarUIAuth() {
         card.classList.remove('premium-locked');
         if (tag) {
           tag.style.display = 'block';
-          tag.textContent = '1 USO GRÁTIS';
+          tag.textContent = '1 grátis';
           tag.style.background = 'rgba(16, 185, 129, 0.1)';
           tag.style.color = '#10b981';
           tag.style.borderColor = 'rgba(16, 185, 129, 0.2)';
@@ -417,23 +446,10 @@ async function submitAuth() {
 async function handleLogout() {
   await authLogout();
   
-  // Limpeza profunda de estado para evitar vazamento visual para o modo Guest
-  if (window.HistoryManager) {
-    window.HistoryManager._cacheCloud = [];
-  }
-  if (typeof estado !== 'undefined') {
-    estado.dadosAtuais = null;
-    estado.tipoAtual = null;
-    estado.pastaAtivaId = null;
-  }
-  
-  // Força o retorno para a tela inicial (limpa a visualização)
-  if (window.navegarPara) {
-    window.navegarPara('home');
-  }
-  
-  mostrarToast('Você saiu do ProMat.', 'info');
+  // Redireciona para auth
+  window.location.href = '/auth/?tab=login';
 }
+
 
 // Inicializa variável de tab
 window._authTabAtiva = 'login';

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="ProMat — Plataforma educacional avançada para professores de matemática.">
   <title>ProMat — Workspace Educacional</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=3">
   <link rel="icon" type="image/png" href="assets/img/logoComFundo.png">
   <style>
     #auth-gate {
@@ -72,88 +72,97 @@
 
   <div class="layout-wrapper">
 
-    <!-- ===================== SIDEBAR OVERLAY (mobile) ===================== -->
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
-
-    <!-- ===================== SIDEBAR ===================== -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="logo" onclick="navegarPara('home'); fecharSidebar()">
-          <img src="assets/img/logoComFundo.png" alt="ProMat Logo" class="logo-img">
-          <span>ProMat</span>
-          <span class="plan-badge" id="plan-badge" style="display:none;"></span>
-        </div>
-        <button class="btn-fechar-sidebar" onclick="fecharSidebar()" title="Fechar menu">
-          <i class="ph ph-x"></i>
-        </button>
+    <!-- ===================== TOP BAR ===================== -->
+    <header class="topbar">
+      <div class="topbar-logo" onclick="navegarPara('home')">
+        <img src="assets/img/logoComFundo.png" alt="ProMat Logo" class="topbar-logo-img">
+        <span>ProMat</span>
       </div>
-
-      <!-- Dois botões de ação distintos -->
-      <div class="sidebar-actions">
-        <button class="btn-sidebar-action primary" onclick="iniciarNovaConversa()">
-          <i class="ph ph-plus-circle"></i>
-          Nova conversa
-        </button>
-        <button class="btn-sidebar-action secondary" onclick="navegarPara('historico')">
-          <i class="ph ph-clock-counter-clockwise"></i>
-          Histórico
-        </button>
+      
+      <div class="top-nav-links">
+        <button class="top-nav-item ativo" onclick="navegarPara('home')" id="desktop-nav-btn-home">Criar</button>
+        <button class="top-nav-item" onclick="navegarPara('historico')" id="desktop-nav-btn-historico">Histórico</button>
+        <button class="top-nav-item" onclick="abrirPerfil()" id="desktop-nav-btn-perfil">Perfil</button>
       </div>
-
-      <!-- Banner de contexto ativo -->
-      <div class="contexto-ativo-banner" id="sidebar-contexto-banner">
-        <div class="ctx-label"><i class="ph-fill ph-folder-open"></i> Pasta ativa</div>
-        <div class="ctx-nome" id="sidebar-contexto-nome">—</div>
-        <button class="btn-sair-contexto" onclick="sairDoPastaContexto()">
-          <i class="ph ph-arrow-left"></i> Sair da pasta
-        </button>
+      <div class="topbar-actions">
+        <span class="plan-badge" id="plan-badge" style="display:none;"></span>
       </div>
+    </header>
 
-      <!-- Navegação / Histórico -->
-      <nav class="sidebar-nav" id="sidebar-nav">
-        <!-- Preenchido via JS -->
-      </nav>
-
-      <div class="sidebar-footer">
-        <!-- Auth: Botão Entrar (visível quando deslogado) -->
-        <button class="btn-auth-entrar" id="auth-btn" onclick="Auth.abrirModal()">
-          <i class="ph ph-sign-in"></i>
-          <span>Entrar / Criar conta</span>
-        </button>
-        <!-- Auth: Info do usuário (visível quando logado) -->
-        <div class="auth-user-info" id="auth-user-info" style="display:none;">
-          <i class="ph-fill ph-user-circle"></i>
-          <div class="auth-user-details">
-            <span class="auth-email"></span>
-            <button class="btn-logout" onclick="Auth.logout()" title="Sair">
-              <i class="ph ph-sign-out"></i> Sair
-            </button>
-          </div>
-        </div>
-        <!-- Status do servidor -->
-        <div class="api-status-mini">
-          <div class="api-dot" id="api-dot"></div>
-          <span id="api-status-texto">Verificando...</span>
-        </div>
-      </div>
-    </aside>
+    <!-- ===================== BOTTOM NAV (App Like) ===================== -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="bottom-nav-item ativo" onclick="navegarPara('home')" id="nav-btn-home">
+        <i class="ph ph-house"></i>
+        <span>Criar</span>
+      </button>
+      <button class="bottom-nav-item" onclick="navegarPara('historico')" id="nav-btn-historico">
+        <i class="ph ph-clock-counter-clockwise"></i>
+        <span>Histórico</span>
+      </button>
+      <button class="bottom-nav-item" onclick="abrirPerfil()" id="nav-btn-perfil">
+        <i class="ph ph-user"></i>
+        <span>Perfil</span>
+      </button>
+    </nav>
 
     <!-- ===================== AREA PRINCIPAL ===================== -->
     <div class="main-content" id="main-content">
 
-      <!-- Mobile top bar -->
-      <div class="mobile-topbar">
-        <button class="btn-hamburger" onclick="abrirSidebar()" title="Menu">
-          <i class="ph ph-list"></i>
-        </button>
-        <div class="mobile-logo-container">
-          <img src="assets/img/logoComFundo.png" alt="ProMat Logo" class="logo-img-mobile">
-          <span class="mobile-logo">ProMat</span>
+      <!-- ==================== VIEW: ONBOARDING / PLANOS ==================== -->
+      <section id="view-onboarding" class="view-section onboarding-screen">
+        <div class="onboarding-container">
+          <div class="onboarding-header">
+            <h1 class="onboarding-title">Comece com o plano Pro</h1>
+            <p class="onboarding-subtitle">Experimente tudo por 14 dias. Sem cobrança durante o teste.</p>
+          </div>
+
+          <div class="onboarding-card">
+            <div class="onboarding-badge">Recomendado</div>
+            <h2 class="onboarding-card-title">Pro</h2>
+            <p class="onboarding-card-desc">Para profissionais que querem produtividade máxima.</p>
+            
+            <div class="onboarding-toggle">
+              <span class="toggle-option">Mensal</span>
+              <span class="toggle-option ativo">Anual <span class="discount">-50%</span></span>
+            </div>
+
+            <div class="onboarding-price">
+              <span class="price-value">R$ 24,99</span><span class="price-period">/mês</span>
+            </div>
+            <p class="onboarding-price-billed">Cobrado R$ 299,90 por ano</p>
+
+            <button class="btn-onboarding-cta" onclick="iniciarCheckoutPremium('anual')">
+              <i class="ph-fill ph-sparkle"></i> Começar — 14 dias grátis
+            </button>
+
+            <div class="onboarding-feature-box">
+              <i class="ph-fill ph-sparkle"></i>
+              <div class="feature-box-text">
+                <strong>Geração Ilimitada de Materiais</strong>
+                <p>Crie quantas listas, avaliações e exercícios precisar. Sem limites mensais para você planejar todas as suas turmas.</p>
+              </div>
+            </div>
+
+            <ul class="onboarding-features-list">
+              <li><i class="ph-fill ph-check"></i> Exportação em PDF com formatação impecável</li>
+              <li><i class="ph-fill ph-check"></i> Gabaritos completos para todas as atividades</li>
+              <li><i class="ph-fill ph-check"></i> Pastas infinitas para organização</li>
+              <li><i class="ph-fill ph-check"></i> Filtro avançado por habilidades da BNCC</li>
+            </ul>
+          </div>
+
+          <a href="#" class="onboarding-skip" onclick="pularOnboarding(); return false;">Continuar no plano grátis por enquanto</a>
+
+          <div class="onboarding-guarantees">
+            <p><i class="ph-fill ph-check-circle"></i> 14 dias grátis no Pro — só paga se gostar</p>
+            <p><i class="ph-fill ph-check-circle"></i> Cancele quando quiser, sem burocracia</p>
+          </div>
+
+          <div class="onboarding-legal">
+            <a href="#">Termos de uso</a> • <a href="#">Política de privacidade</a>
+          </div>
         </div>
-        <button class="btn-hamburger" onclick="iniciarNovaConversa()" title="Nova conversa">
-          <i class="ph ph-plus-circle"></i>
-        </button>
-      </div>
+      </section>
 
       <!-- ==================== VIEW: HOME ==================== -->
       <section id="view-home" class="view-section ativa">
@@ -229,11 +238,7 @@
 
       <!-- ==================== VIEW: FORMULÁRIO ==================== -->
       <section id="view-form" class="view-section">
-        <div class="top-nav">
-          <button class="btn-voltar" onclick="navegarPara('home')">
-            <i class="ph ph-caret-left"></i> Voltar
-          </button>
-        </div>
+
 
         <div class="form-wrapper">
           <div class="form-header">
@@ -319,9 +324,7 @@
 
         <div class="result-toolbar">
           <div class="toolbar-left">
-            <button class="btn-voltar" onclick="navegarPara('home')">
-              <i class="ph ph-caret-left"></i> <span>Início</span>
-            </button>
+
             <div class="resultado-pasta-badge" id="resultado-pasta-badge">
               <i class="ph-fill ph-folder"></i>
               <span id="resultado-pasta-nome">—</span>
@@ -367,9 +370,7 @@
       <section id="view-historico" class="view-section">
         <div class="hist-page-header">
           <div class="hist-page-title-row">
-            <button class="btn-voltar" onclick="navegarPara('home')">
-              <i class="ph ph-caret-left"></i> Início
-            </button>
+
             <div>
               <h2 class="hist-page-title"><i class="ph-fill ph-clock-counter-clockwise"></i> Histórico</h2>
               <p class="hist-page-subtitle">Conteúdos gerados com IA, salvos na nuvem.</p>
@@ -581,34 +582,35 @@
   <!-- ===================== TOASTS ===================== -->
   <div class="toast-system" id="toast-container"></div>
 
-  <!-- ===================== MODAL: AUTH ===================== -->
-  <div class="overlay" id="auth-modal-overlay">
-    <div class="modal auth-modal">
-      <div class="auth-modal-header">
-        <h3 class="auth-title" id="auth-title">Entrar no ProMat</h3>
-        <button class="btn-icon" onclick="Auth.fecharModal()" title="Fechar"><i class="ph ph-x"></i></button>
+  <!-- ===================== MODAL: PERFIL / CONTA ===================== -->
+  <div class="overlay" id="perfil-modal-overlay">
+    <div class="modal" style="max-width: 400px; border-radius: 16px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="ph-fill ph-user-circle"></i> Minha Conta</h3>
+        <button class="btn-icon" onclick="fecharPerfil()"><i class="ph ph-x"></i></button>
       </div>
-      <!-- Tabs -->
-      <div class="auth-tabs">
-        <button class="auth-tab ativo" id="auth-tab-login" onclick="trocarTabAuth('login')">Entrar</button>
-        <button class="auth-tab" id="auth-tab-cadastro" onclick="trocarTabAuth('cadastro')">Criar conta</button>
-      </div>
-      <!-- Formulário -->
-      <div class="auth-modal-body">
-        <div class="form-group" id="auth-name-group" style="display: none;">
-          <label for="auth-name">Nome Completo</label>
-          <input type="text" id="auth-name" placeholder="Como quer ser chamado?" autocomplete="name">
+      <div class="modal-body" style="text-align: center; padding: 30px 20px;">
+        <div style="font-size: 48px; color: var(--brand-600); margin-bottom: 12px;">
+          <i class="ph-fill ph-user-circle"></i>
         </div>
-        <div class="form-group">
-          <label for="auth-email">E-mail</label>
-          <input type="email" id="auth-email" placeholder="seu@email.com" autocomplete="email">
+        <h3 id="perfil-nome" style="font-size: 18px; color: var(--text-main); margin-bottom: 4px;">—</h3>
+        <p id="perfil-email" style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">—</p>
+        
+        <div style="background: var(--bg-app); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left;">
+          <p style="font-size: 12px; text-transform: uppercase; font-weight: 700; color: var(--text-light); margin-bottom: 8px;">Status da Assinatura</p>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span id="perfil-plano-nome" style="font-weight: 600; color: var(--brand-900);">Free</span>
+            <button class="btn btn-outline-soft" style="font-size: 12px; padding: 4px 8px;" onclick="Auth.abrirModalUpgrade()">Fazer Upgrade</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="auth-password">Senha</label>
-          <input type="password" id="auth-password" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
-        </div>
-        <p class="auth-error" id="auth-error"></p>
-        <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="submitAuth()">Entrar</button>
+
+        <button class="btn btn-outline-soft" style="width: 100%; margin-bottom: 12px; color: var(--brand-700); border-color: var(--brand-200);" onclick="fecharPerfil(); abrirModalFeedback();">
+          <i class="ph-fill ph-chat-circle-dots"></i> Enviar Feedback
+        </button>
+
+        <button class="btn btn-outline" style="width: 100%; color: #ef4444; border-color: #fca5a5;" onclick="Auth.logout()">
+          <i class="ph ph-sign-out"></i> Sair da conta
+        </button>
       </div>
     </div>
   </div>
@@ -633,19 +635,6 @@
     </div>
   </div>
 
-  <!-- ===================== FEEDBACK FLUTUANTE ===================== -->
-  <div class="feedback-container">
-    <div class="feedback-tooltip" id="feedback-tooltip">
-      Nos dê seu feedback!
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="feedback-arrow">
-        <path d="M12 22C12 22 18 10 22 4C22 4 15 7 6 7C1.5 7 2 12 2 12C2 12 7 12 12 22Z" fill="currentColor"/>
-      </svg>
-    </div>
-    <button class="floating-feedback" onclick="abrirModalFeedback()" title="Enviar Feedback">
-      <i class="ph-fill ph-chat-circle-dots"></i>
-      <span>Feedback</span>
-    </button>
-  </div>
 
   <!-- Modal Feedback -->
   <div class="overlay" id="modal-feedback-overlay">

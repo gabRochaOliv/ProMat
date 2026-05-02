@@ -13,6 +13,10 @@
     {
       "src": "landing/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "auth/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -27,6 +31,14 @@
     {
       "src": "/landing/(.*)",
       "dest": "landing/$1"
+    },
+    {
+      "src": "/auth/?$",
+      "dest": "auth/index.html"
+    },
+    {
+      "src": "/auth/(.*)",
+      "dest": "auth/$1"
     },
     {
       "src": "/(assets|css|js)/(.*)",

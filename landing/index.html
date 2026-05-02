@@ -20,6 +20,40 @@
 
   <link rel="stylesheet" href="/landing/styles.css" />
 
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    // Inicializa o cliente Supabase via /api/config (igual ao app)
+    window._sbClient = null;
+    window._sbReady = false;
+
+    async function initLandingSupabase() {
+      if (window._sbClient) return window._sbClient;
+      try {
+        const resp = await fetch('/api/config');
+        if (!resp.ok) throw new Error('config indisponivel');
+        const cfg = await resp.json();
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return null;
+        window._sbClient = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+        window._sbReady = true;
+
+        // Se já tem sessão ativa, vai direto pro app
+        const { data: { session } } = await window._sbClient.auth.getSession();
+        if (session) {
+          window.location.href = '/';
+        }
+
+        return window._sbClient;
+      } catch (e) {
+        console.warn('[Landing Auth] Supabase não inicializado:', e.message);
+        return null;
+      }
+    }
+
+    // Inicializa assim que o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', initLandingSupabase);
+  </script>
+
   <!-- Meta Pixel Code -->
   <script>
   !function(f,b,e,v,n,t,s)
@@ -58,12 +92,11 @@
         <span>ProMat</span>
       </a>
 
-      <nav class="nav-pill" aria-label="Navegação principal">
-        <a href="#mecanismo">Como funciona</a>
-        <a href="#faq">Perguntas</a>
-      </nav>
+      <div class="nav-actions" style="display: flex; align-items: center; gap: 12px;">
+        <a href="/auth/?tab=login" style="padding: 8px 16px; font-size: 0.875rem; font-weight: 500; color: var(--text-dark-primary); text-decoration: none; transition: 0.3s;">Entrar</a>
+        <a href="/auth/?tab=cadastro" style="padding: 8px 16px; font-size: 0.875rem; font-weight: 600; color: #fff; background: var(--brand-600); border-radius: 999px; text-decoration: none; transition: 0.3s; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">Criar conta</a>
+      </div>
 
-     
     </div>
   </header>
 
@@ -72,57 +105,60 @@
     <!-- ===== HERO ===== -->
     <section class="hero">
       <div class="hero-grid" aria-hidden="true"></div>
-      <div class="container">
+      <div class="container" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding-top: 40px;">
 
-      
+        <!-- Eyebrow -->
+        <div class="hero-eyebrow" style="background: rgba(20, 184, 166, 0.08); border: 1px solid rgba(20, 184, 166, 0.2); color: var(--brand-500); padding: 6px 16px; border-radius: 999px; font-size: 0.875rem; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Inteligência artificial educacional
+        </div>
 
-       
-
-        <img
-          src="/landing/assets/logo.png"
-          alt="Logo ProMat"
-          class="hero-floating"
-          style="max-width: 150px; height: auto; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); margin-bottom: 2rem; display: block; margin-left: auto; margin-right: auto;"
-          loading="eager"
-        />
-
-        <h1 class="hero-headline">
-          Conheça o <em>ProMat</em>.
+        <h1 class="hero-headline" style="font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; margin-bottom: 20px; max-width: 700px; text-align: left; letter-spacing: -0.02em;">
+          <span style="color: var(--text-dark-primary);">Foque na didática.</span><br/>
+          <span style="color: var(--brand-500);">A IA gera o material da sua aula.</span>
         </h1>
 
-        <p class="hero-sub">
-          Gere listas, provas, desafios e explicações com uma IA especializada em matemática escolar brasileira.
-          <br>
-          — <em>com gabarito validado, BNCC e PDF pronto pra imprimir.</em>
+        <p class="hero-sub" style="font-size: 1rem; color: var(--text-dark-secondary); max-width: 580px; margin-bottom: 32px; line-height: 1.6; text-align: left;">
+          Gere listas, provas, desafios e explicações com uma IA especializada em matemática escolar brasileira — com gabarito validado, BNCC e PDF pronto pra imprimir. Tudo em um só lugar.
         </p>
 
-        <div class="hero-cta-wrap">
-          <a href="#" class="cta-primary" data-cta="hero">
-            Testar grátis agora
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        <div class="hero-cta-wrap" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 40px;">
+          <a href="/auth/?tab=cadastro" class="btn-comece" style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--brand-500); color: #fff; font-weight: 600; border-radius: 999px; text-decoration: none; transition: 0.3s; font-size: 0.9375rem; box-shadow: 0 4px 14px rgba(20, 184, 166, 0.4);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            Comece grátis
           </a>
-        
+          <a href="#mecanismo" class="btn-como-funciona" style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: transparent; border: 1px solid rgba(20, 184, 166, 0.3); color: var(--brand-500); font-weight: 500; border-radius: 999px; text-decoration: none; transition: 0.3s; font-size: 0.9375rem;">
+            Como funciona
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
         </div>
 
-
-        <!-- integration bar -->
-        <div class="integration-bar">
-          <div class="ib-group">
-            <span class="ib-label">Compatível com:</span>
-            <span class="ib-chip">Word</span>
-            <span class="ib-chip">PDF</span>
-            <span class="ib-chip">Google Classroom</span>
-            <span class="ib-chip">Moodle</span>
+        <div class="hero-stats" style="display: flex; align-items: stretch; gap: 32px; margin-bottom: 48px; text-align: left;">
+          <div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: var(--brand-500); line-height: 1; letter-spacing: -0.01em;">90%</div>
+            <div style="font-size: 0.75rem; color: var(--text-dark-muted); margin-top: 6px;">menos tempo no Word</div>
           </div>
-          <div class="ib-divider" aria-hidden="true"></div>
-          <div class="ib-group">
-            <span class="ib-label">Níveis:</span>
-            <span class="ib-chip">Fundamental II</span>
-            <span class="ib-chip">Médio</span>
-            <span class="ib-chip">Vestibular</span>
-            <span class="ib-chip">Olimpíada</span>
+          <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+          <div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: var(--brand-500); line-height: 1; letter-spacing: -0.01em;">2min</div>
+            <div style="font-size: 0.75rem; color: var(--text-dark-muted); margin-top: 6px;">por prova montada</div>
+          </div>
+          <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+          <div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: var(--brand-500); line-height: 1; letter-spacing: -0.01em;">100%</div>
+            <div style="font-size: 0.75rem; color: var(--text-dark-muted); margin-top: 6px;">alinhado à BNCC</div>
           </div>
         </div>
+
+        <!-- Notebook Image (Replacing logo) -->
+        <div class="hero-image-wrapper" style="width: 100%; position: relative; align-self: center; margin-top: 16px;">
+          <!-- Glow -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 70%; background: var(--brand-500); filter: blur(140px); opacity: 0.15; z-index: 0; pointer-events: none;"></div>
+          <!-- The image -->
+          <img src="/landing/assets/img1-promat.png" alt="Plataforma ProMat" style="width: 100%; height: auto; position: relative; z-index: 1; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 30px 60px rgba(0,0,0,0.4);" loading="eager" onerror="this.src='/landing/assets/img1-promat.png'" />
+        </div>
+
+      
 
       </div>
     </section>
@@ -136,8 +172,8 @@
           <img src="/landing/assets/custo_oculto.png" alt="O custo oculto da preparação das aulas" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" loading="lazy" />
         </div>
         <div class="section-cta">
-          <a href="#" class="cta-primary" data-cta="problem">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="problem">
+            Comece grátis agora
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
@@ -148,6 +184,245 @@
     <section class="transition">
       <div class="container container-narrow">
         <h2 class="h-serif-giant">Existe um jeito de isso tudo virar <em>2 minutos</em>.</h2>
+      </div>
+    </section>
+
+    <!-- ===== DEPOIMENTOS ===== -->
+    <section class="testimonials">
+      <div class="container container-narrow" style="text-align: center; margin-bottom: 56px;">
+        <span class="eyebrow" style="background: rgba(20, 184, 166, 0.1); color: var(--brand-500); border: 1px solid rgba(20, 184, 166, 0.2); text-transform: none; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 
+          Depoimentos
+        </span>
+        <h2 class="h-serif-lg" style="margin-top: 24px; color: var(--text-dark-primary);">O que dizem nossos professores</h2>
+      </div>
+
+      <!-- LINHA 1 (Rola para a Esquerda) -->
+      <div class="scroller-wrapper" style="margin-bottom: 24px;">
+        <div class="scroller">
+          <div class="scroller-inner">
+            <!-- Group 1 -->
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #115e59;">RO</div>
+                <div class="t-body">
+                  <p class="t-quote">"A facilidade de gerar versões A e B da mesma prova é fantástica. Economizo horas e acabo com a cola na sala de aula."</p>
+                  <div class="t-author">
+                    <p class="t-name">Prof. Ricardo Oliveira</p>
+                    <p class="t-role">Professor de Matemática, 9º ano</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0f766e;">LM</div>
+                <div class="t-body">
+                  <p class="t-quote">"Formatar fórmulas no Word era um pesadelo. Com o ProMat, o PDF já sai lindo, pronto para impressão em segundos."</p>
+                  <div class="t-author">
+                    <p class="t-name">Luciana Mendes</p>
+                    <p class="t-role">Professora do Ensino Médio</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #334155;">CS</div>
+                <div class="t-body">
+                  <p class="t-quote">"O gabarito validado me dá a segurança que eu não tinha usando o ChatGPT. A precisão matemática é impressionante."</p>
+                  <div class="t-author">
+                    <p class="t-name">Carlos Silva</p>
+                    <p class="t-role">Coordenador Pedagógico</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #1e293b;">MS</div>
+                <div class="t-body">
+                  <p class="t-quote">"A integração com a BNCC facilita demais o preenchimento do meu plano de aula semanal. Recomendo muito aos colegas!"</p>
+                  <div class="t-author">
+                    <p class="t-name">Mariana Souza</p>
+                    <p class="t-role">Professora do Fundamental II</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Group 2 (Duplicate for infinite scroll) -->
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #115e59;">RO</div>
+                <div class="t-body">
+                  <p class="t-quote">"A facilidade de gerar versões A e B da mesma prova é fantástica. Economizo horas e acabo com a cola na sala de aula."</p>
+                  <div class="t-author">
+                    <p class="t-name">Prof. Ricardo Oliveira</p>
+                    <p class="t-role">Professor de Matemática, 9º ano</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0f766e;">LM</div>
+                <div class="t-body">
+                  <p class="t-quote">"Formatar fórmulas no Word era um pesadelo. Com o ProMat, o PDF já sai lindo, pronto para impressão em segundos."</p>
+                  <div class="t-author">
+                    <p class="t-name">Luciana Mendes</p>
+                    <p class="t-role">Professora do Ensino Médio</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #334155;">CS</div>
+                <div class="t-body">
+                  <p class="t-quote">"O gabarito validado me dá a segurança que eu não tinha usando o ChatGPT. A precisão matemática é impressionante."</p>
+                  <div class="t-author">
+                    <p class="t-name">Carlos Silva</p>
+                    <p class="t-role">Coordenador Pedagógico</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #1e293b;">MS</div>
+                <div class="t-body">
+                  <p class="t-quote">"A integração com a BNCC facilita demais o preenchimento do meu plano de aula semanal. Recomendo muito aos colegas!"</p>
+                  <div class="t-author">
+                    <p class="t-name">Mariana Souza</p>
+                    <p class="t-role">Professora do Fundamental II</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- LINHA 2 (Rola para a Direita) -->
+      <div class="scroller-wrapper">
+        <div class="scroller">
+          <div class="scroller-inner right">
+            <!-- Group 1 -->
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0d9488;">FR</div>
+                <div class="t-body">
+                  <p class="t-quote">"Os desafios extras gerados ajudam demais com os alunos mais avançados que estão se preparando para a OBMEP."</p>
+                  <div class="t-author">
+                    <p class="t-name">Fernando Reis</p>
+                    <p class="t-role">Treinador Olímpico</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0284c7;">AP</div>
+                <div class="t-body">
+                  <p class="t-quote">"Os alunos adoram os desafios que o ProMat gera. As aulas ficaram muito mais dinâmicas e o engajamento aumentou."</p>
+                  <div class="t-author">
+                    <p class="t-name">Ana Paula</p>
+                    <p class="t-role">Professora de Matemática</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #475569;">JV</div>
+                <div class="t-body">
+                  <p class="t-quote">"Consigo focar mais na didática e menos na burocracia de montar listas. A plataforma entrega tudo mastigado."</p>
+                  <div class="t-author">
+                    <p class="t-name">Julio Vieira</p>
+                    <p class="t-role">Professor Universitário</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #9333ea;">RB</div>
+                <div class="t-body">
+                  <p class="t-quote">"O recurso de gerar explicações de conceitos salva meu domingo. O conteúdo é didático e direto ao ponto."</p>
+                  <div class="t-author">
+                    <p class="t-name">Renata Brito</p>
+                    <p class="t-role">Professora Particular</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Group 2 (Duplicate for infinite scroll) -->
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0d9488;">FR</div>
+                <div class="t-body">
+                  <p class="t-quote">"Os desafios extras gerados ajudam demais com os alunos mais avançados que estão se preparando para a OBMEP."</p>
+                  <div class="t-author">
+                    <p class="t-name">Fernando Reis</p>
+                    <p class="t-role">Treinador Olímpico</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #0284c7;">AP</div>
+                <div class="t-body">
+                  <p class="t-quote">"Os alunos adoram os desafios que o ProMat gera. As aulas ficaram muito mais dinâmicas e o engajamento aumentou."</p>
+                  <div class="t-author">
+                    <p class="t-name">Ana Paula</p>
+                    <p class="t-role">Professora de Matemática</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #475569;">JV</div>
+                <div class="t-body">
+                  <p class="t-quote">"Consigo focar mais na didática e menos na burocracia de montar listas. A plataforma entrega tudo mastigado."</p>
+                  <div class="t-author">
+                    <p class="t-name">Julio Vieira</p>
+                    <p class="t-role">Professor Universitário</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-card">
+              <div class="t-header">
+                <div class="t-avatar" style="background: #9333ea;">RB</div>
+                <div class="t-body">
+                  <p class="t-quote">"O recurso de gerar explicações de conceitos salva meu domingo. O conteúdo é didático e direto ao ponto."</p>
+                  <div class="t-author">
+                    <p class="t-name">Renata Brito</p>
+                    <p class="t-role">Professora Particular</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
     </section>
 
@@ -201,8 +476,8 @@
           </div>
         </div>
         <div class="section-cta">
-          <a href="#" class="cta-primary" data-cta="mechanism">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="mechanism">
+            Comece grátis agora
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
@@ -260,8 +535,8 @@
           <p>Todas com <strong>filtro por habilidade BNCC</strong>, 4 níveis de dificuldade e exportação em PDF.</p>
         </div>
         <div class="section-cta">
-          <a href="#" class="cta-primary" data-cta="features">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="features">
+            Comece grátis agora
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
@@ -305,8 +580,8 @@
           </div>
         </div>
         <div class="section-cta">
-          <a href="#" class="cta-primary" data-cta="compare">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="compare">
+            Comece grátis agora
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
         </div>
@@ -318,14 +593,127 @@
       <div class="container container-narrow">
         <h2 class="h-serif-xl dark">O retorno que realmente importa</h2>
 
-        <div class="benefits-body" style="text-align: center; margin-top: 2rem; margin-bottom: 2rem;">
-          <img src="/landing/assets/retornoquerealmente.png" alt="O retorno que realmente importa" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" loading="lazy" />
+        <div class="benefits-body" style="text-align: center;">
+          <img src="/landing/assets/retornoquerealmente.png" alt="O retorno que realmente importa" style="max-width: 100%; height: auto;" loading="lazy" />
         </div>
         <div class="section-cta">
-          <a href="#" class="cta-primary" data-cta="benefits">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="benefits">
+            Comece grátis agora
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PLANOS / PREÇOS ===== -->
+    <section class="pricing" id="planos">
+      <div class="container container-narrow">
+        <div class="pricing-head">
+          <h2 class="h-serif-xl dark">Comece grátis, evolua quando quiser</h2>
+          <p class="pricing-sub">
+            Experimente sem compromisso. Faça upgrade para desbloquear todo o potencial da IA.
+          </p>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Plano Gratuito -->
+          <article class="pricing-card free-plan">
+            <div class="card-header">
+              <h3>Gratuito</h3>
+              <p>Para conhecer a plataforma</p>
+            </div>
+            <div class="card-price">
+              <span class="currency">R$</span>
+              <span class="amount">0</span>
+            </div>
+            <a href="/auth/?tab=cadastro" class="btn-pricing btn-free" data-cta="pricing-free">Criar conta grátis</a>
+            
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                5 materiais por mês (listas/provas)
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Gabarito 100% validado pela IA
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Alinhamento com a BNCC
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Exportação em PDF
+              </li>
+            </ul>
+          </article>
+
+          <!-- Plano Pro -->
+          <article class="pricing-card pro-plan">
+            <div class="pro-badge">Recomendado</div>
+            <div class="card-header">
+              <h3>Pro</h3>
+              <p>Produtividade máxima</p>
+            </div>
+            
+            <div class="billing-toggle">
+              <button class="toggle-btn" id="btn-mensal">Mensal</button>
+              <button class="toggle-btn active" id="btn-anual">Anual <span class="discount">-50%</span></button>
+            </div>
+
+            <div class="card-price">
+              <div class="price-value">
+                <span class="currency">R$</span>
+                <span class="amount" id="price-amount">14<span class="cents">,90</span></span>
+                <span class="period">/mês</span>
+              </div>
+              <p class="billing-note" id="billing-note">R$ 178,80 cobrados anualmente</p>
+            </div>
+            
+            <p class="trial-note">7 dias grátis para testar</p>
+            
+            <a href="/auth/?tab=cadastro" class="btn-pricing btn-pro" data-cta="pricing-pro">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Começar — 7 dias grátis
+            </a>
+
+            <div class="pro-highlight">
+              <div class="highlight-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <div class="highlight-text">
+                <h4>Geração sem limites para todas turmas</h4>
+                <p>Crie listas e provas infinitas, com múltiplas versões (A/B/C) para evitar cola.</p>
+              </div>
+            </div>
+
+            <p class="features-title">Tudo do plano Gratuito, e mais:</p>
+            <ul class="pricing-features pro-features">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Geração ilimitada de materiais
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Material de explicação de conceito
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Desafios extras (OBMEP, ENEM)
+              </li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="pricing-guarantees">
+          <div class="guarantee-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Cancele quando quiser
+          </div>
+          <div class="guarantee-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Setup em 2 minutos
+          </div>
         </div>
       </div>
     </section>
@@ -402,8 +790,8 @@
         <h2 class="h-serif-giant">O material para sua próxima aula pode estar pronto em <em>2 minutos</em>.</h2>
 
         <div class="cta-final-btn">
-          <a href="#" class="cta-primary" data-cta="final">
-            Testar grátis agora
+          <a href="/auth/?tab=cadastro" class="cta-primary" data-cta="final">
+            Criar minha conta grátis
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
           <p class="cta-micro">Sem cartão. Sem instalação. Cancele quando quiser (ou nunca — o plano grátis é pra sempre).</p>
@@ -420,6 +808,8 @@
 
        
       </div>
+    </section>
+
     </section>
 
     <!-- ===== FOOTER ===== -->

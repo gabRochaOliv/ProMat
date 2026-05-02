@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acesso - ProMat</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/auth/style.css" />
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    // Inicializa o cliente Supabase via /api/config
+    window._sbClient = null;
+    window._sbReady = false;
+
+    async function initAuthSupabase() {
+      if (window._sbClient) return window._sbClient;
+      try {
+        const resp = await fetch('/api/config');
+        if (!resp.ok) throw new Error('config indisponivel');
+        const cfg = await resp.json();
+        if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return null;
+        window._sbClient = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+        window._sbReady = true;
+
+        // Se já tem sessão ativa, vai direto pro app
+        const { data: { session } } = await window._sbClient.auth.getSession();
+        if (session) {
+          window.location.href = '/';
+        }
+
+        return window._sbClient;
+      } catch (e) {
+        console.warn('[Auth] Supabase não inicializado:', e.message);
+        return null;
+      }
+    }
+
+    // Inicializa assim que o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', initAuthSupabase);
+  </script>
+</head>
+<body>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      
+      <!-- Cabeçalho (Logo + Títulos) -->
+      <div class="auth-header">
+        <img src="/assets/img/logo.png" alt="ProMat Logo" class="auth-logo-img" />
+        <h1 class="auth-title">ProMat</h1>
+        <p class="auth-subtitle">Crie materiais didáticos em minutos</p>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- VIEW DE CADASTRO                           -->
+      <!-- ========================================== -->
+      <div id="view-cadastro" class="auth-view">
+        <div class="form-group">
+          <label for="reg-name">Nome</label>
+          <input type="text" id="reg-name" placeholder="Seu nome" />
+        </div>
+        
+        <div class="form-group">
+          <label for="reg-email">E-mail</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password">Senha</label>
+          <input type="password" id="reg-password" placeholder="••••••••" />
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password-confirm">Confirmar senha</label>
+          <input type="password" id="reg-password-confirm" placeholder="••••••••" />
+        </div>
+
+        <p class="auth-error" id="error-cadastro"></p>
+
+        <button class="btn-primary" id="btn-submit-cadastro" onclick="submitAuth('cadastro')">
+          <span class="btn-text">Cadastrar</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="auth-divider">
+          <span>ou continue com</span>
+        </div>
+
+        <button class="btn-social" onclick="alert('Login social em breve!')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          Entrar com Google
+        </button>
+
+        <p class="auth-switch">
+          Já tem conta? <a href="#" onclick="trocarView('login'); return false;">Entrar</a>
+        </p>
+
+        <p class="auth-legal">
+          Ao continuar, você concorda com a <a href="#">Política de privacidade</a><br>e os <a href="#">Termos de uso</a>.
+        </p>
+      </div>
+
+
+      <!-- ========================================== -->
+      <!-- VIEW DE LOGIN                              -->
+      <!-- ========================================== -->
+      <div id="view-login" class="auth-view" style="display: none;">
+        <div class="form-group">
+          <label for="log-email">E-mail</label>
+          <input type="email" id="log-email" placeholder="seu@email.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="log-password">Senha</label>
+          <input type="password" id="log-password" placeholder="••••••••" />
+        </div>
+
+        <div class="forgot-password">
+          <a href="#">Esqueceu a senha?</a>
+        </div>
+
+        <p class="auth-error" id="error-login"></p>
+
+        <button class="btn-primary" id="btn-submit-login" onclick="submitAuth('login')">
+          <span class="btn-text">Entrar</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="auth-divider">
+          <span>ou continue com</span>
+        </div>
+
+        <button class="btn-social" onclick="alert('Login social em breve!')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          Entrar com Google
+        </button>
+
+        <p class="auth-switch">
+          Não tem conta? <a href="#" onclick="trocarView('cadastro'); return false;">Cadastre-se</a>
+        </p>
+
+        <p class="auth-legal">
+          Ao continuar, você concorda com a <a href="#">Política de privacidade</a><br>e os <a href="#">Termos de uso</a>.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/auth/script.js"></script>
+</body>
+</html>

@@ -30,7 +30,7 @@ const TEMAS_POR_SERIE = {
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
   configurarEventosUI();
-  HistoryManager.renderizarSidebar();
+  // HistoryManager.renderizarSidebar(); // Removido, sidebar não existe mais
   navegarPara('home');
   await verificarStatusBackend();
 
@@ -38,6 +38,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.SupabaseClient) {
     await window.SupabaseClient.init();
     if (window.Auth) await window.Auth.init();
+  }
+
+  // Verifica onboarding
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('first_login') === 'true') {
+    // Remove o parâmetro da URL para não ficar repetindo
+    window.history.replaceState({}, document.title, '/');
+    mostrarOnboarding();
   }
 });
 
@@ -61,22 +69,63 @@ function navegarPara(viewId) {
     carregarHistorico();
   }
 
-  fecharSidebar(); // fecha drawer no mobile ao navegar
+  atualizarNavBottom(viewId);
+}
+
+function atualizarNavBottom(viewId) {
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('ativo'));
+  document.querySelectorAll('.top-nav-item').forEach(btn => btn.classList.remove('ativo'));
+  
+  if (viewId === 'home' || viewId === 'form' || viewId === 'result') {
+    document.getElementById('nav-btn-home')?.classList.add('ativo');
+    document.getElementById('desktop-nav-btn-home')?.classList.add('ativo');
+  } else if (viewId === 'historico') {
+    document.getElementById('nav-btn-historico')?.classList.add('ativo');
+    document.getElementById('desktop-nav-btn-historico')?.classList.add('ativo');
+  }
 }
 
 // ============================================================
-// SIDEBAR MÓVEL
+// MODAL: PERFIL / CONTA
 // ============================================================
-function abrirSidebar() {
-  document.getElementById('sidebar').classList.add('aberta');
-  document.getElementById('sidebar-overlay').classList.add('ativo');
-  document.body.style.overflow = 'hidden';
+function abrirPerfil() {
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('ativo'));
+  document.querySelectorAll('.top-nav-item').forEach(btn => btn.classList.remove('ativo'));
+  
+  document.getElementById('nav-btn-perfil')?.classList.add('ativo');
+  document.getElementById('desktop-nav-btn-perfil')?.classList.add('ativo');
+
+  const usuario = window.Auth?.estado?.usuario;
+  if (!usuario) {
+    // Se não estiver logado, abre o modal de auth
+    if (window.Auth) window.Auth.abrirModal();
+    return;
+  }
+
+  // Preenche dados
+  document.getElementById('perfil-nome').textContent = usuario.user_metadata?.full_name || 'Usuário';
+  document.getElementById('perfil-email').textContent = usuario.email;
+  
+  const plano = window.Auth?.estado?.plano === 'premium' ? 'Premium 👑' : 'Free';
+  document.getElementById('perfil-plano-nome').textContent = plano;
+
+  document.getElementById('perfil-modal-overlay').classList.add('ativo');
 }
 
-function fecharSidebar() {
-  document.getElementById('sidebar').classList.remove('aberta');
-  document.getElementById('sidebar-overlay').classList.remove('ativo');
-  document.body.style.overflow = '';
+function fecharPerfil() {
+  document.getElementById('perfil-modal-overlay').classList.remove('ativo');
+  atualizarNavBottom(estado.viewAtual);
+}
+
+// ============================================================
+// ONBOARDING (PLANOS)
+// ============================================================
+function mostrarOnboarding() {
+  document.getElementById('view-onboarding').classList.add('ativa');
+}
+
+function pularOnboarding() {
+  document.getElementById('view-onboarding').classList.remove('ativa');
 }
 
 // ============================================================
@@ -89,41 +138,42 @@ function entrarNaPasta(pastaId) {
 
   estado.pastaAtivaId = pastaId;
   atualizarUIContexto();
-  HistoryManager.renderizarSidebar();
-  fecharSidebar();
 }
 
 function sairDoPastaContexto() {
   estado.pastaAtivaId = null;
   atualizarUIContexto();
-  HistoryManager.renderizarSidebar();
 }
 
 function atualizarUIContexto() {
   const aulas = HistoryManager.obterAulas();
   const pasta = estado.pastaAtivaId ? aulas.find(a => a.id === estado.pastaAtivaId) : null;
 
-  // Banner na sidebar
+  // Banner na sidebar (se existir)
   const sidebarBanner = document.getElementById('sidebar-contexto-banner');
   const sidebarNome = document.getElementById('sidebar-contexto-nome');
-  if (pasta) {
-    sidebarBanner.classList.add('ativo');
-    sidebarNome.textContent = pasta.nome;
-  } else {
-    sidebarBanner.classList.remove('ativo');
+  if (sidebarBanner) {
+    if (pasta) {
+      sidebarBanner.classList.add('ativo');
+      if (sidebarNome) sidebarNome.textContent = pasta.nome;
+    } else {
+      sidebarBanner.classList.remove('ativo');
+    }
   }
 
   // Banner na home
   const homeBanner = document.getElementById('home-context-bar');
   const homeNome = document.getElementById('home-ctx-nome');
   const heroSub = document.getElementById('hero-subtitle');
-  if (pasta) {
-    homeBanner.classList.add('ativo');
-    homeNome.textContent = pasta.nome;
-    if (heroSub) heroSub.textContent = `Gerando conteúdo para: ${pasta.nome}`;
-  } else {
-    homeBanner.classList.remove('ativo');
-    if (heroSub) heroSub.textContent = 'Escolha o tipo de material e gere em segundos com IA.';
+  if (homeBanner) {
+    if (pasta) {
+      homeBanner.classList.add('ativo');
+      if (homeNome) homeNome.textContent = pasta.nome;
+      if (heroSub) heroSub.textContent = `Gerando conteúdo para: ${pasta.nome}`;
+    } else {
+      homeBanner.classList.remove('ativo');
+      if (heroSub) heroSub.textContent = 'Escolha o tipo de material e gere em segundos com IA.';
+    }
   }
 }
 
@@ -131,7 +181,6 @@ function atualizarUIContexto() {
 // MODAL: NOVA PASTA
 // ============================================================
 function abrirModalNovaPasta() {
-  fecharSidebar();
 
   if (window.Auth && window.Auth.estado.plano !== 'premium') {
     mostrarModalUpgrade('Organizar gerações em Pastas ilimitadas é um benefício exclusivo do plano Premium.');
@@ -1194,11 +1243,11 @@ async function verificarStatusBackend() {
   try {
     const r = await verificarBackend();
     estado.backendOnline = true;
-    dot.className = 'api-dot ok';
-    span.textContent = 'Online';
+    if (dot) dot.className = 'api-dot ok';
+    if (span) span.textContent = 'Online';
   } catch (e) {
-    dot.className = 'api-dot err';
-    span.textContent = 'Servidor offline';
+    if (dot) dot.className = 'api-dot err';
+    if (span) span.textContent = 'Servidor offline';
   }
 }
 

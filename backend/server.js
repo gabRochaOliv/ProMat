@@ -67,8 +67,10 @@ app.use('/api/', limiter);
 // ======================================
 const frontendPath = path.join(__dirname, '..', 'frontend');
 const landingPath = path.join(__dirname, '..', 'landing');
+const authPath = path.join(__dirname, '..', 'auth');
 
 app.use('/landing', express.static(landingPath));
+app.use('/auth', express.static(authPath));
 app.use(express.static(frontendPath));
 
 // ======================================
@@ -139,7 +141,20 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
 });
 
-// Fallback para SPA (qualquer rota não-API serve o index.html)
+// Fallback para SPA (qualquer rota não-API serve o index.html do frontend)
+// Exceção: /landing/* e /auth/* já é tratado pelo express.static acima
+app.get('/landing', (req, res) => {
+  res.sendFile(path.join(landingPath, 'index.html'));
+});
+app.get('/landing/', (req, res) => {
+  res.sendFile(path.join(landingPath, 'index.html'));
+});
+app.get('/auth', (req, res) => {
+  res.sendFile(path.join(authPath, 'index.html'));
+});
+app.get('/auth/', (req, res) => {
+  res.sendFile(path.join(authPath, 'index.html'));
+});
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
